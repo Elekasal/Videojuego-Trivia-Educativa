@@ -1,0 +1,229 @@
+/* ==========================================================
+🎨 VARIABLES DE TEMA (V4 mantenido)
+========================================================== */
+:root {
+  --background: #F0FFFF;
+  --card-bg: #FFFFFF;
+  --primary: #00B4D8;
+  --secondary: #FF8C00;
+  --accent: #B0A990;
+  --success: #2ECC71;
+  --warning: #FF7F50;
+  --danger: #FF5252;
+  --info: #3498DB;
+  --text: #333333;
+}
+
+/* ==========================================================
+🧩 BASE
+========================================================== */
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--background);
+  background-image: linear-gradient(45deg, var(--accent) 25%, transparent 25%,
+                transparent 75%, var(--accent) 75%, var(--accent)),
+                linear-gradient(45deg, var(--accent) 25%, transparent 25%,
+                transparent 75%, var(--accent) 75%, var(--accent));
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+  background-blend-mode: soft-light;
+  background-attachment: fixed;
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* ==========================================================
+📦 CONTENEDORES
+========================================================== */
+.login-container,
+.signup-container,
+.menu-container {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
+  backdrop-filter: blur(5px);
+  border: 2px solid var(--primary);
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 500px;
+  margin: 2rem auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-container,
+.trivia-container,
+.score-container {
+  max-width: 800px;
+}
+
+/* ==========================================================
+🔘 BOTONES
+========================================================== */
+.btn {
+  transition: all 0.3s ease;
+  transform: scale(1);
+  position: relative;
+  overflow: hidden;
+  background-color: var(--primary);
+  color: white;
+}
+.btn:hover { transform: scale(1.05); }
+.btn:active { transform: scale(0.95); }
+
+/* Ripple */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0; border-radius: 100%;
+  transform: scale(1) translate(-50%, -50%);
+}
+.btn:focus:not(:active)::after { animation: ripple 1s ease-out; }
+
+@keyframes ripple {
+  0% { transform: scale(0) translate(-50%, -50%); opacity: 1; }
+  100% { transform: scale(15) translate(-50%, -50%); opacity: 0; }
+}
+
+/* Botones especiales por ID (para que no los sobreescriba .btn) */
+#login-button,
+#signup-button,
+#start-trivia-btn {
+  background: linear-gradient(to right, var(--primary), var(--info));
+  color: white;
+}
+
+#next-subject-btn,
+#back-to-menu-btn {
+  background: linear-gradient(to right, var(--secondary), var(--accent));
+  color: white;
+}
+
+/* NUEVOS: volver al menú en varias pantallas */
+#go-menu-from-trivia,
+#go-menu-from-subject,
+#back-from-scores {
+  background: linear-gradient(to right, var(--secondary), var(--accent));
+  color: white;
+}
+
+/* ==========================================================
+🎮 MENÚ PRINCIPAL
+========================================================== */
+.menu-btn {
+  height: 160px;
+  font-size: 1.5rem;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  margin-bottom: 1.5rem;
+  border-radius: 1rem; color: white;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+  position: relative; overflow: hidden;
+}
+.menu-btn i { font-size: 3rem; margin-bottom: 1rem; }
+
+.menu-btn.trivia-btn {
+  background: linear-gradient(135deg, var(--primary), var(--info));
+}
+.menu-btn.scores-btn {
+  background: linear-gradient(135deg, var(--secondary), var(--accent));
+}
+
+/* Logout */
+.logout-btn {
+  position: absolute; top: 1rem; right: 1rem;
+  background-color: var(--danger); color: white;
+  border-radius: 50%; width: 50px; height: 50px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10;
+}
+.logout-btn:hover { background-color: var(--secondary); }
+
+/* ==========================================================
+🧠 PREGUNTAS
+========================================================== */
+.question-card {
+  background-color: var(--card-bg);
+  border-radius: 1rem;
+  padding: 2rem; margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.answer-btn {
+  display: block; width: 100%; text-align: left;
+  padding: 1rem 1.5rem; margin-bottom: 0.75rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(to right, var(--accent), var(--secondary));
+  border: 3px solid var(--secondary);
+  transition: all 0.3s; color: white; font-weight: 500;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.answer-btn:hover {
+  background: linear-gradient(to right, var(--secondary), var(--danger));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.answer-btn:active { transform: translateY(1px); }
+
+.answer-btn.correct {
+  background: linear-gradient(to right, var(--success), #1aaa54);
+  border-color: var(--success); font-weight: bold;
+}
+.answer-btn.incorrect {
+  background: linear-gradient(to right, var(--danger), #e03e3e);
+  border-color: var(--danger); font-weight: bold;
+}
+
+/* ==========================================================
+📊 PROGRESO
+========================================================== */
+.progress-bar { height: 10px; border-radius: 5px; background-color: var(--accent); margin: 1.5rem 0; }
+.progress-bar-fill { height: 100%; border-radius: 5px; background-color: var(--primary); transition: width 0.3s ease; }
+
+/* ==========================================================
+🏆 TABLA
+========================================================== */
+.score-table { width: 100%; border-collapse: collapse; }
+.score-table th, .score-table td { padding: 0.75rem; border-bottom: 1px solid var(--accent); text-align: center; }
+.score-table tr:nth-child(even) { background-color: var(--background); }
+.score-table th { background-color: var(--secondary); color: white; position: sticky; top: 0; }
+
+/* ==========================================================
+🎉 CONFETI
+========================================================== */
+.confetti {
+  position: absolute; width: 10px; height: 10px; background-color: #f00;
+  animation: confetti-fall 3s linear forwards; z-index: 1000;
+}
+@keyframes confetti-fall {
+  0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+/* ==========================================================
+🎞️ LOTTIE: tamaños equilibrados y centrados
+========================================================== */
+.lottie-container { width: 140px; height: 140px; margin: 0 auto; }
+.lottie-sm { width: 140px; height: 140px; }
+.lottie-md { width: 180px; height: 180px; }
+
+/* ==========================================================
+📱 RESPONSIVE
+========================================================== */
+@media(max-width:640px){
+  .menu-container, .trivia-container, .score-container { padding: 1.5rem; }
+  .menu-btn { height: 150px; font-size: 1.5rem; }
+  .menu-btn i { font-size: 3rem; }
+  .logout-btn { width: 60px; height: 60px; font-size: 1.5rem; }
+  h1.text-3xl { font-size: 1.875rem; }
+  .grid.grid-cols-1.md\:grid-cols-2 { grid-template-columns: 1fr; }
+}

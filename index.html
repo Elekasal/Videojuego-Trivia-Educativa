@@ -1,766 +1,258 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <!-- ==========================================================
+  🧠 HEAD
+  Mantiene librerías y estructura del V4
+  ========================================================== -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Juego Educativo Hospitalario</title>
+
+  <!-- TailwindCSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Animate.css -->
   <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
-  <style id="app-style">
-    :root {
-      --background: #F0FFFF;  /* Light cyan */
-      --card-bg: #FFFFFF;
-      --primary: #00B4D8;     /* Cheerful teal */
-      --secondary: #FF8C00;   /* Warm orange */
-      --accent: #B0A990;      /* Soft beige (replacing #FFD700) */
-      --success: #2ECC71;     /* Lively green */
-      --warning: #FF7F50;     /* Coral */
-      --danger: #FF5252;      /* Brighter red */
-      --info: #3498DB;        /* Bright blue */
-      --text: #333333;
-    }
-    
-    /* Añade un Backround sutil al body */
-    body {
-      font-family: 'Nunito', sans-serif;
-      background-color: var(--background);
-      background-image: linear-gradient(45deg, var(--accent) 25%, transparent 25%, 
-                    transparent 75%, var(--accent) 75%, var(--accent)),
-                    linear-gradient(45deg, var(--accent) 25%, transparent 25%, 
-                    transparent 75%, var(--accent) 75%, var(--accent));
-      background-size: 60px 60px;
-      background-position: 0 0, 30px 30px;
-      background-blend-mode: soft-light;
-      background-attachment: fixed;
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-    
-    .app-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
-    
-    .login-container, .signup-container, .menu-container {
-      background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
-      backdrop-filter: blur(5px);
-      border: 2px solid var(--primary);
-      border-radius: 1rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-      max-width: 500px;
-      margin: 2rem auto;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .menu-container, .trivia-container, .score-container {
-      max-width: 800px;
-    }
-    
-    .login-container {
-      background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.8));
-      backdrop-filter: blur(5px);
-      border: 2px solid var(--primary);
-      border-radius: 1rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      padding: 2rem;
-      max-width: 500px;
-      margin: 2rem auto;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .login-header, .signup-header, .menu-header, .trivia-header, .score-header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-    
-    .btn {
-      transition: all 0.3s ease;
-      transform: scale(1);
-      position: relative;
-      overflow: hidden;
-      background-color: var(--primary);
-      color: white;
-    }
-    
-    .btn:hover {
-      transform: scale(1.05);
-    }
-    
-    .btn:active {
-      transform: scale(0.95);
-    }
-    
-    .btn::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 5px;
-      height: 5px;
-      background: rgba(255, 255, 255, 0.5);
-      opacity: 0;
-      border-radius: 100%;
-      transform: scale(1) translate(-50%, -50%);
-      transform-origin: 50% 50%;
-    }
-    
-    .btn:focus:not(:active)::after {
-      animation: ripple 1s ease-out;
-    }
-    
-    .menu-btn {
-      height: 160px;
-      font-size: 1.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 1.5rem;
-      border-radius: 1rem;
-      color: white;
-      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .menu-btn i {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-    
-    .menu-btn.trivia-btn {
-      background: linear-gradient(135deg, var(--primary), var(--info));
-    }
-    
-    .menu-btn.scores-btn {
-      background: linear-gradient(135deg, var(--secondary), var(--accent));
-    }
-    
-    .logout-btn {
-      position: absolute;
-      top: 1rem;  /* Changed from bottom: 4rem; to top: 1rem; */
-      right: 1rem;
-      background-color: var(--danger);
-      color: white;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      z-index: 10;  /* Added to ensure the button sits above other content */
-    }
-    
-    .logout-btn:hover {
-      background-color: var(--secondary);
-    }
-    
-    .question-card {
-      background-color: var(--card-bg);
-      border-radius: 1rem;
-      padding: 2rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .answer-btn {
-      display: block;
-      width: 100%;
-      text-align: left;
-      padding: 1rem 1.5rem;  /* Aumento del horizontal relleno horizontal */
-      margin-bottom: 0.75rem;  /* Aumento del margen */
-      border-radius: 0.75rem;  /*Mayor radio de borde */
-      background: linear-gradient(to right, var(--accent), var(--secondary));  /* Fondo degradado */
-      border: 3px solid var(--secondary);  /* Borde más grueso en color secundario */
-      transition: all 0.3s;
-      color: white;  /* Texto blanco para un mejor contraste. */
-      font-weight: 500;  /* Texto ligeramente más negrita */
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  /* Sombra sutil para mayor profundidad*/
-    }
-
-    .answer-btn:hover {
-      background: linear-gradient(to right, var(--secondary), var(--danger));  /* Darker gradient on hover */
-      transform: translateY(-2px);  /* Ligero efecto lifting */
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);  /* Sombra mejorada al pasar el mouse */
-    }
-
-    .answer-btn:active {
-      transform: translateY(1px);  /* Press efecto */
-    }
-
-    .answer-btn.correct {
-      background: linear-gradient(to right, var(--success), #1aaa54);  /* Degradado verde más oscuro */
-      border-color: var(--success);
-      color: white;
-      font-weight: bold;
-    }
-
-    .answer-btn.incorrect {
-      background: linear-gradient(to right, var(--danger), #e03e3e);  /* Degradado rojo más oscuro */
-      border-color: var(--danger);
-      color: white;
-      font-weight: bold;
-    }
-    
-    .progress-bar {
-      height: 10px;
-      border-radius: 5px;
-      background-color: var(--accent);
-      margin: 1.5rem 0;
-    }
-    
-    .progress-bar-fill {
-      height: 100%;
-      border-radius: 5px;
-      background-color: var(--primary);
-      transition: width 0.3s ease;
-    }
-    
-    .score-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    
-    .score-table th, .score-table td {
-      padding: 0.75rem;
-      border-bottom: 1px solid var(--accent);
-      text-align: center;
-    }
-    
-    .score-table tr:nth-child(even) {
-      background-color: var(--background);
-    }
-    
-    .score-table th {
-      background-color: var(--secondary);
-      color: white;
-      position: sticky;
-      top: 0;
-    }
-    
-    .hidden {
-      display: none !important;
-    }
-    
-    /* Animations */
-    @keyframes ripple {
-      0% {
-        transform: scale(0) translate(-50%, -50%);
-        opacity: 1;
-      }
-      100% {
-        transform: scale(15) translate(-50%, -50%);
-        opacity: 0;
-      }
-    }
-    
-    .fade-in {
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    
-    .bounce-in {
-      animation: bounceIn 0.5s ease-in-out;
-    }
-    
-    @keyframes bounceIn {
-      0% { transform: scale(0.3); opacity: 0; }
-      50% { transform: scale(1.05); opacity: 1; }
-      70% { transform: scale(0.9); }
-      100% { transform: scale(1); }
-    }
-    
-    /* Confetti Animation */
-    .confetti {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background-color: #f00;
-      animation: confetti-fall 3s linear forwards;
-      z-index: 1000;
-    }
-    
-    @keyframes confetti-fall {
-      0% { 
-        transform: translateY(-100px) rotate(0deg);
-        opacity: 1;
-      }
-      100% { 
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-    
-    /* Add new animation styles */
-    .animate-pulse {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-      }
-      50% {
-        transform: scale(1.05);
-      }
-    }
-
-    .animate-bounce {
-      animation: bounce 1s infinite;
-    }
-
-    @keyframes bounce {
-      0%, 100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-10px);
-      }
-    }
-
-    .animate-spin {
-      animation: spin 3s linear infinite;
-    }
-
-    @keyframes spin {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .animate-wobble {
-      animation: wobble 1s ease-in-out;
-    }
-
-    @keyframes wobble {
-      0% { transform: rotate(0); }
-      15% { transform: rotate(-15deg); }
-      30% { transform: rotate(10deg); }
-      45% { transform: rotate(-10deg); }
-      60% { transform: rotate(5deg); }
-      75% { transform: rotate(-5deg); }
-      100% { transform: rotate(0); }
-    }
-
-    .animate-grow {
-      animation: grow 1.5s ease-out;
-    }
-
-    @keyframes grow {
-      from { transform: scaleY(0); }
-      to { transform: scaleY(1); }
-    }
-
-    .lottie-container {
-      width: 150px;
-      height: 150px;
-      margin: 0 auto;
-      max-width: 150px;
-      max-height: 150px;
-    }
-    
-    @media(max-width:640px){ 
-      .lottie-container {
-        max-width: 120px;
-        max-height: 120px;
-      }
-    }
-    
-    /* Responsive Ajustes */
-    @media (max-width: 640px) {
-      .menu-container, .trivia-container, .score-container {
-        padding: 1.5rem;
-      }
-      
-      .menu-btn {
-        height: 150px;  
-        font-size: 1.5rem;  
-      }
-      
-      .menu-btn i {
-        font-size: 3rem; 
-      }
-      
-      /* Agrandar el botón de cierre de sesión en dispositivos móviles */
-      .logout-btn {
-        width: 60px;
-        height: 60px;
-        font-size: 1.5rem;
-      }
-
-      h1.text-3xl {
-        font-size: 1.875rem;
-      }
-      
-      /* Forzar la cuadrícula del menú a una sola columna en pantallas pequeñas*/
-      .grid.grid-cols-1.md\:grid-cols-2 {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    /*Ajustes de respuesta adicionales */
-    @media (min-width: 641px) and (max-width: 1024px) {
-      .app-container {
-        padding: 1.5rem;
-      }
-      
-      .menu-btn {
-        height: 140px;
-      }
-    }
-    
-    /* Actualizar anillos de enfoque para entradas */
-    input:focus {
-      outline: none;
-      ring: 2px;
-      ring-color: rgba(255, 255, 255, 0.5);
-    }
-    
-    /* Actualice los degradados de botones restantes */
-    #login-button, #signup-button, #start-trivia-btn {
-      background: linear-gradient(to right, var(--primary), var(--info));
-      color: white;
-    }
-    
-    #next-subject-btn, #back-to-menu-btn {
-      background: linear-gradient(to right, var(--secondary), var(--accent));
-      color: white;
-    }
-    
-    .delete-score-btn {
-      background-color: transparent;
-      color: var(--danger);
-      border: none;
-      cursor: pointer;
-      padding: 0.25rem 0.5rem;
-      border-radius: 0.25rem;
-      transition: all 0.2s;
-    }
-    
-    .delete-score-btn:hover {
-      background-color: rgba(255, 82, 82, 0.1);
-      transform: scale(1.1);
-    }
-    
-    .delete-score-btn:active {
-      transform: scale(0.95);
-    }
-    
-    /* Estilos modales*/
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      width: 90%;
-      max-width: 500px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9));
-      backdrop-filter: blur(10px);
-      border: 2px solid var(--primary);
-      border-radius: 1rem;
-      padding: 2rem;
-      position: relative;
-      transform: scale(0.9);
-      animation: modal-appear 0.3s forwards;
-    }
-
-    @keyframes modal-appear {
-      to {
-        transform: scale(1);
-      }
-    }
-
-    .cycle-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 120px;
-      transition: all 0.3s ease;
-    }
-
-    .cycle-btn:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-    }
-  </style>
+  <!-- Estilos locales -->
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div id="app" class="app-container">
-    <!-- Login Screen -->
+    <!-- 🧩 LOGIN -->
     <div id="login-screen" class="login-container fade-in">
       <div class="login-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--primary);">¡Bienvenido a JuegoHospital!</h1>
-        <div class="lottie-container my-4" id="login-mascot-animation"></div>
+        <h1 class="text-3xl font-bold text-center" style="color: var(--primary);">
+          ¡Bienvenido a JuegoHospital!
+        </h1>
+        <!-- Lottie más pequeña y centrada -->
+        <div class="lottie-container lottie-sm my-4" id="login-mascot-animation"></div>
       </div>
-      
+
       <form id="login-form">
         <div class="mb-4">
           <label for="username" class="block text-sm font-medium mb-1">Nombre de usuario</label>
-          <input type="text" id="username" name="username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+          <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-        
+
         <div class="mb-6">
           <label for="password" class="block text-sm font-medium mb-1">Contraseña</label>
-          <input type="password" id="password" name="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary" required>
+          <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-        
+
         <div id="login-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
           <p>Usuario o contraseña incorrectos. Inténtalo de nuevo.</p>
         </div>
-        
-        <button type="submit" id="login-button" class="btn w-full bg-gradient-to-r from-primary to-info text-white py-2 rounded-md hover:opacity-90 transition-opacity font-bold text-lg">
+
+        <button type="submit" id="login-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
           Iniciar Sesión
         </button>
-        
+
         <div class="mt-4 text-center">
-          <p>¿No tienes una cuenta? <a href="javascript:void(0)" id="signup-link" class="text-primary font-bold">Registrarse</a></p>
+          <p>¿No tienes una cuenta?
+            <a href="javascript:void(0)" id="signup-link" class="text-primary font-bold">Registrarse</a>
+          </p>
         </div>
       </form>
     </div>
-    
-    <!-- Signup Screen -->
+
+    <!-- 🧾 REGISTRO -->
     <div id="signup-screen" class="signup-container hidden fade-in">
       <div class="signup-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--secondary);">Crear una cuenta</h1>
-        <div class="lottie-container my-4" id="signup-user-animation"></div>
+        <h1 class="text-3xl font-bold text-center" style="color: var(--secondary);">
+          Crear una cuenta
+        </h1>
+        <div class="lottie-container lottie-sm my-4" id="signup-user-animation"></div>
       </div>
-      
+
       <form id="signup-form">
         <div class="mb-4">
           <label for="new-username" class="block text-sm font-medium mb-1">Nombre de usuario</label>
-          <input type="text" id="new-username" name="new-username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary" required>
+          <input type="text" id="new-username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-        
+
         <div class="mb-4">
           <label for="new-email" class="block text-sm font-medium mb-1">Correo electrónico</label>
-          <input type="email" id="new-email" name="new-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary" required>
+          <input type="email" id="new-email" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-        
+
         <div class="mb-6">
           <label for="new-password" class="block text-sm font-medium mb-1">Contraseña</label>
-          <input type="password" id="new-password" name="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary" required>
+          <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-        
+
         <div id="signup-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
           <p>Por favor completa todos los campos correctamente.</p>
         </div>
-        
+
         <div id="signup-success" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded">
           <p>¡Cuenta creada exitosamente! Ya puedes iniciar sesión.</p>
         </div>
-        
-        <button type="submit" id="signup-button" class="btn w-full bg-gradient-to-r from-secondary to-accent text-white py-2 rounded-md hover:opacity-90 transition-opacity font-bold text-lg">
+
+        <button type="submit" id="signup-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
           Registrarse
         </button>
-        
+
         <div class="mt-4 text-center">
-          <p>¿Ya tienes una cuenta? <a href="javascript:void(0)" id="login-link" class="text-secondary font-bold">Iniciar Sesión</a></p>
+          <p>¿Ya tienes una cuenta?
+            <a href="javascript:void(0)" id="login-link" class="text-secondary font-bold">Iniciar Sesión</a>
+          </p>
         </div>
       </form>
     </div>
-    
-    <!-- Main Menu -->
+
+    <!-- 🎮 MENÚ PRINCIPAL -->
     <div id="main-menu" class="menu-container hidden fade-in">
       <div class="menu-header">
-        <h1 class="text-3xl font-bold text-center mb-2" style="color: var(--text);">¡Hola <span id="user-name">Amigo</span>!</h1>
+        <h1 class="text-3xl font-bold text-center mb-2">¡Hola <span id="user-name">Amigo</span>!</h1>
         <p class="text-gray-500 text-center">¿A qué quieres jugar hoy?</p>
-        <div id="menu-book-animation" class="lottie-container mx-auto mb-4"></div>
+        <div id="menu-book-animation" class="lottie-container lottie-md mx-auto mb-4"></div>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button id="trivia-menu-btn" class="btn menu-btn trivia-btn">
-          <i class="fas fa-question-circle"></i>
-          Trivia Educativa
+          <i class="fas fa-question-circle"></i> Trivia Educativa
         </button>
-        
+
         <button id="scores-menu-btn" class="btn menu-btn scores-btn">
-          <i class="fas fa-trophy"></i>
-          Tabla de Puntajes
+          <i class="fas fa-trophy"></i> Tabla de Puntajes
         </button>
       </div>
-      
-      <button id="logout-btn" class="btn logout-btn">
+
+      <button id="logout-btn" class="btn logout-btn" title="Cerrar sesión">
         <i class="fas fa-sign-out-alt"></i>
       </button>
     </div>
-    
-    <!-- NombrePaciente Trivia -->
+
+    <!-- 🧒 FORM NOMBRE PACIENTE -->
     <div id="patient-name-form" class="trivia-container hidden fade-in">
-      <div class="trivia-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--primary);">Antes de comenzar...</h1>
-        <div class="flex justify-center my-4">
-          <svg class="w-20 h-20 animate-wobble" viewBox="0 0 24 24" fill="var(--primary)">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-          </svg>
-        </div>
+      <div class="trivia-header text-center">
+        <h1 class="text-3xl font-bold" style="color: var(--primary);">Antes de comenzar...</h1>
       </div>
-      
+
       <form id="patient-form">
         <div class="mb-6">
           <label for="patient-name" class="block text-lg font-medium mb-2">¿Cómo te llamas?</label>
-          <input type="text" id="patient-name" name="patient-name" class="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" required>
+          <input type="text" id="patient-name" class="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg" required>
         </div>
-        
-        <button type="submit" id="start-trivia-btn" class="btn w-full bg-gradient-to-r from-primary to-info text-white py-3 rounded-md hover:opacity-90 transition-opacity font-bold text-lg">
+
+        <button type="submit" id="start-trivia-btn" class="btn w-full text-white py-3 rounded-md font-bold text-lg">
           ¡Comenzar Trivia!
         </button>
-        
-        <button type="button" id="back-to-menu-from-patient" class="btn w-full mt-4 bg-gray-200 text-gray-700 py-2 rounded-md hover:bg-gray-300 transition-colors font-medium">
+
+        <button type="button" id="back-to-menu-from-patient" class="btn w-full mt-4 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
           Volver al menú
         </button>
       </form>
     </div>
-    
-    <!-- ciclo de selección modal -->
+
+    <!-- 🧮 MODAL CICLO -->
     <div id="cycle-modal" class="modal hidden fade-in">
-      <div class="modal-content bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto">
-        <div class="text-center">
-          <h2 class="text-2xl font-bold mb-4">Selecciona el ciclo</h2>
-          <div class="lottie-container my-4" id="cycle-animation"></div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            <button id="primer-ciclo-btn" class="btn cycle-btn bg-gradient-to-r from-primary to-info text-white py-4 px-6 rounded-lg hover:opacity-90 transition-opacity font-bold text-lg">
-              <i class="fas fa-child text-2xl mb-2"></i>
-              Primer Ciclo<br><span class="text-sm">(1° a 3°)</span>
-            </button>
-            <button id="segundo-ciclo-btn" class="btn cycle-btn bg-gradient-to-r from-secondary to-accent text-white py-4 px-6 rounded-lg hover:opacity-90 transition-opacity font-bold text-lg">
-              <i class="fas fa-book-reader text-2xl mb-2"></i>
-              Segundo Ciclo<br><span class="text-sm">(4° a 6°)</span>
-            </button>
-          </div>
+      <div class="modal-content">
+        <h2 class="text-2xl font-bold mb-2 text-center">Selecciona el ciclo</h2>
+        <div id="cycle-animation" class="lottie-container lottie-sm my-2 mx-auto"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <button id="primer-ciclo-btn" class="btn cycle-btn text-white font-bold">
+            Primer Ciclo<br><span class="text-sm">(1° a 3°)</span>
+          </button>
+          <button id="segundo-ciclo-btn" class="btn cycle-btn text-white font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
+            Segundo Ciclo<br><span class="text-sm">(4° a 6°)</span>
+          </button>
         </div>
       </div>
     </div>
-    
-    <!-- Trivia Game -->
+
+    <!-- ❓ TRIVIA -->
     <div id="trivia-game" class="trivia-container hidden fade-in">
       <div class="trivia-header">
         <div class="flex justify-between items-center">
-          <button id="back-from-trivia" class="text-gray-500 hover:text-gray-700">
-            <svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="var(--secondary)">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
-            </svg>
+          <button id="back-from-trivia" class="btn text-white px-3 py-2 rounded-md" title="Salir de la trivia" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
+            <i class="fas fa-arrow-left"></i>
           </button>
           <h2 class="text-2xl font-bold" id="subject-title">Materia</h2>
-          <div class="w-5"></div> <!--Espaciador para equilibrio -->
+          <div class="w-5"></div>
         </div>
-        
-        <div class="text-center mt-2">
-          <p class="text-sm text-gray-500" id="question-counter">Pregunta 1 de 5</p>
-        </div>
-        
+        <p class="text-sm text-gray-500 text-center mt-2" id="question-counter">Pregunta 1 de 5</p>
         <div class="progress-bar mt-4">
           <div class="progress-bar-fill" id="progress-fill" style="width: 20%"></div>
         </div>
       </div>
-      
+
       <div class="question-card">
         <h3 class="text-xl font-medium mb-4" id="question-text">¿Pregunta de ejemplo?</h3>
-        
-        <div id="answers-container" class="mt-6">
-          <!-- Las respuestas se insertarán aquí. -->
-        </div>
+        <div id="answers-container" class="mt-6"></div>
       </div>
+
+      <!-- NUEVO: botón claro para volver al menú -->
+      <button id="go-menu-from-trivia" class="btn mt-2 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
+        Volver al Menú Principal
+      </button>
     </div>
-    
-    <!-- Puntuación de la materia Screen -->
+
+    <!-- 🧾 PUNTAJE POR MATERIA -->
     <div id="subject-score" class="trivia-container hidden fade-in">
       <div class="text-center">
         <h2 class="text-2xl font-bold mb-2" id="subject-score-title">Puntaje en Materia</h2>
-        <div class="lottie-container my-4" id="score-rocket-animation"></div>
-        
+        <div class="lottie-container lottie-sm my-4 mx-auto" id="score-rocket-animation"></div>
         <div class="bg-white rounded-xl shadow-lg p-6 max-w-sm mx-auto">
           <div class="text-6xl font-bold mb-4" id="subject-score-value" style="color: var(--primary);">0/5</div>
           <p id="subject-score-message" class="text-gray-600">¡Buen trabajo!</p>
         </div>
-        
-        <button id="next-subject-btn" class="btn mt-8 bg-gradient-to-r from-secondary to-accent text-white py-3 px-8 rounded-md hover:opacity-90 transition-opacity font-bold text-lg">
-          Continuar
-        </button>
+        <div class="flex flex-col gap-3 items-center mt-6">
+          <button id="next-subject-btn" class="btn text-white py-3 px-8 rounded-md font-bold text-lg">
+            Continuar
+          </button>
+          <!-- NUEVO: volver al menú desde puntaje por materia -->
+          <button id="go-menu-from-subject" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
+            Volver al Menú Principal
+          </button>
+        </div>
       </div>
     </div>
-    
-    <!-- Final Score Screen -->
+
+    <!-- 🏆 PUNTAJE FINAL -->
     <div id="final-score" class="trivia-container hidden fade-in">
       <div class="text-center">
         <h2 class="text-2xl font-bold mb-2">¡Trivia Completada!</h2>
-        <div class="lottie-container my-4" id="trophy-animation"></div>
-        
+        <div class="lottie-container lottie-sm my-4 mx-auto" id="trophy-animation"></div>
         <div class="bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto">
-          <h3 class="text-xl font-bold mb-4">Resultados para <span id="final-patient-name">Estudiante</span></h3>
-          
+          <h3 class="text-xl font-bold mb-4">
+            Resultados para <span id="final-patient-name">Estudiante</span>
+          </h3>
           <div class="grid grid-cols-3 gap-4 mb-6">
-            <div class="text-center p-3 rounded-lg" style="background-color: rgba(255, 107, 107, 0.1);">
+            <div>
               <p class="text-sm text-gray-500">Lengua</p>
               <div class="text-2xl font-bold" id="language-score" style="color: var(--primary);">0/5</div>
             </div>
-            
-            <div class="text-center p-3 rounded-lg" style="background-color: rgba(78, 205, 196, 0.1);">
+            <div>
               <p class="text-sm text-gray-500">Matemática</p>
               <div class="text-2xl font-bold" id="math-score" style="color: var(--secondary);">0/5</div>
             </div>
-            
-            <div class="text-center p-3 rounded-lg" style="background-color: rgba(176, 169, 144, 0.1);">
+            <div>
               <p class="text-sm text-gray-500">Ciencias</p>
               <div class="text-2xl font-bold" id="science-score" style="color: var(--accent);">0/5</div>
             </div>
           </div>
-          
           <div class="py-3 border-t border-gray-200">
             <p class="text-lg font-bold">Puntaje Total: <span id="total-score">0/15</span></p>
           </div>
         </div>
-        
-        <button id="back-to-menu-btn" class="btn mt-8 bg-gradient-to-r from-primary to-danger text-white py-3 px-8 rounded-md hover:opacity-90 transition-opacity font-bold text-lg">
+        <button id="back-to-menu-btn" class="btn mt-8 text-white py-3 px-8 rounded-md font-bold text-lg">
           Volver al Menú Principal
         </button>
       </div>
     </div>
-    
-    <!-- Score Tabla -->
+
+    <!-- 📋 TABLA DE PUNTAJES -->
     <div id="score-table-screen" class="score-container hidden fade-in">
-      <div class="score-header">
-        <div class="flex justify-between items-center mb-4">
-          <button id="back-from-scores" class="text-gray-500 hover:text-gray-700">
-            <i class="fas fa-arrow-left text-xl"></i>
-          </button>
-          <h2 class="text-2xl font-bold">Tabla de Puntajes</h2>
-          <div class="w-5"></div> <!-- Espacio para equilbrio -->
-        </div>
-        <div id="score-trophy-animation" class="lottie-container mx-auto mb-4"></div>
+      <div class="score-header text-center">
+        <h2 class="text-2xl font-bold">Tabla de Puntajes</h2>
+        <div id="score-trophy-animation" class="lottie-container lottie-sm mx-auto mb-4"></div>
       </div>
-      
-      <div class="flex justify-center items-end h-24 gap-2 mb-4">
-        <div class="bg-primary w-8 h-12 rounded-t animate-grow" style="animation-delay: 0s;"></div>
-        <div class="bg-secondary w-8 h-16 rounded-t animate-grow" style="animation-delay: 0.2s;"></div>
-        <div class="bg-accent w-8 h-8 rounded-t animate-grow" style="animation-delay: 0.4s;"></div>
-        <div class="bg-info w-8 h-20 rounded-t animate-grow" style="animation-delay: 0.6s;"></div>
-      </div>
-      
       <div class="overflow-x-auto">
         <table class="score-table">
           <thead>
@@ -774,943 +266,25 @@
               <th>Acción</th>
             </tr>
           </thead>
-          <tbody id="scores-table-body">
-            <!-- Los datos de la puntuación se insertarán aquí. -->
-          </tbody>
+          <tbody id="scores-table-body"></tbody>
         </table>
       </div>
-      
       <div id="no-scores-message" class="text-center py-8 text-gray-500">
         <p>Aún no hay puntajes registrados.</p>
-        <p class="text-sm mt-2">¡Completa una trivia para ver tus resultados aquí!</p>
+      </div>
+
+      <!-- NUEVO: volver al menú desde la tabla -->
+      <div class="flex justify-center mt-6">
+        <button id="back-from-scores" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
+          Volver al Menú Principal
+        </button>
       </div>
     </div>
   </div>
 
+  <!-- Lottie -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"></script>
-
-  <script id="app-script">
-    document.addEventListener('DOMContentLoaded', function() {
-      // App State
-      const appState = {
-        currentUser: null,
-        currentScreen: 'login-screen',
-        currentPatient: null,
-        currentSubject: null,
-        currentQuestion: 0,
-        subjects: ['Lengua', 'Matemática', 'Ciencias Naturales'],
-        subjectIndex: 0,
-        cycle: null,
-        questionsDB: null,
-        scores: {
-          'Lengua': 0,
-          'Matemática': 0,
-          'Ciencias Naturales': 0
-        }
-      };
-      
-      // Base de datos de preguntas: modificada para incluir preguntas específicas del ciclo
-      const questionsDB = {
-        'Lengua': {
-          primerCiclo: [
-            {
-              question: "¿Qué palabra rima con sol?",
-              answers: [
-                { text: "Farol", correct: true },
-                { text: "Casa", correct: false },
-                { text: "Árbol", correct: false },
-                { text: "Mesa", correct: false }
-              ]
-            },
-            {
-              question: "¿Con qué letra comienza la palabra zapato?",
-              answers: [
-                { text: "Z", correct: true },
-                { text: "S", correct: false },
-                { text: "C", correct: false },
-                { text: "X", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es un nombre de cosa?",
-              answers: [
-                { text: "Lápiz", correct: true },
-                { text: "Correr", correct: false },
-                { text: "Feliz", correct: false },
-                { text: "Rápido", correct: false }
-              ]
-            },
-            {
-              question: "¿Con qué signo termina una oración interrogativa?",
-              answers: [
-                { text: "?", correct: true },
-                { text: ".", correct: false },
-                { text: "!", correct: false },
-                { text: ",", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es una oración completa?",
-              answers: [
-                { text: "El niño juega con la pelota", correct: true },
-                { text: "Casa grande", correct: false },
-                { text: "Muy feliz", correct: false },
-                { text: "Corriendo rápido", correct: false }
-              ]
-            }
-          ],
-          segundoCiclo: [
-            {
-              question: "¿Qué tipo de texto narra una historia con personajes?",
-              answers: [
-                { text: "Narrativo", correct: true },
-                { text: "Informativo", correct: false },
-                { text: "Instructivo", correct: false },
-                { text: "Poético", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál de estas palabras está mal escrita?",
-              answers: [
-                { text: "Acer", correct: true },
-                { text: "Hacer", correct: false },
-                { text: "Casa", correct: false },
-                { text: "Perro", correct: false }
-              ]
-            },
-            {
-              question: "¿Para qué sirve el punto y seguido?",
-              answers: [
-                { text: "Para separar oraciones en un mismo párrafo", correct: true },
-                { text: "Para terminar un párrafo", correct: false },
-                { text: "Para hacer una pregunta", correct: false },
-                { text: "Para indicar sorpresa", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué es un protagonista?",
-              answers: [
-                { text: "El personaje principal de una historia", correct: true },
-                { text: "Un tipo de verbo", correct: false },
-                { text: "Un signo de puntuación", correct: false },
-                { text: "Una figura literaria", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es un adjetivo en la oración 'El perro grande ladra'?",
-              answers: [
-                { text: "Grande", correct: true },
-                { text: "El", correct: false },
-                { text: "Perro", correct: false },
-                { text: "Ladra", correct: false }
-              ]
-            }
-          ]
-        },
-        'Matemática': {
-          primerCiclo: [
-            {
-              question: "¿Cuánto es 7 + 5?",
-              answers: [
-                { text: "12", correct: true },
-                { text: "11", correct: false },
-                { text: "13", correct: false },
-                { text: "10", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es el mayor número?",
-              answers: [
-                { text: "27", correct: true },
-                { text: "18", correct: false },
-                { text: "21", correct: false },
-                { text: "16", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué día viene después del martes?",
-              answers: [
-                { text: "Miércoles", correct: true },
-                { text: "Jueves", correct: false },
-                { text: "Lunes", correct: false },
-                { text: "Domingo", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuántos lados tiene un cuadrado?",
-              answers: [
-                { text: "4", correct: true },
-                { text: "3", correct: false },
-                { text: "5", correct: false },
-                { text: "6", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué objeto tiene forma de círculo?",
-              answers: [
-                { text: "Pelota", correct: true },
-                { text: "Libro", correct: false },
-                { text: "Cuaderno", correct: false },
-                { text: "Puerta", correct: false }
-              ]
-            }
-          ],
-          segundoCiclo: [
-            {
-              question: "¿Cuánto es 45 ÷ 5?",
-              answers: [
-                { text: "9", correct: true },
-                { text: "8", correct: false },
-                { text: "7", correct: false },
-                { text: "10", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es la mitad de 60?",
-              answers: [
-                { text: "30", correct: true },
-                { text: "25", correct: false },
-                { text: "35", correct: false },
-                { text: "40", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuánto es 7 × 8?",
-              answers: [
-                { text: "56", correct: true },
-                { text: "54", correct: false },
-                { text: "48", correct: false },
-                { text: "64", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál de estos números es par?",
-              answers: [
-                { text: "14", correct: true },
-                { text: "21", correct: false },
-                { text: "35", correct: false },
-                { text: "49", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué instrumento se usa para medir ángulos?",
-              answers: [
-                { text: "Transportador", correct: true },
-                { text: "Regla", correct: false },
-                { text: "Compás", correct: false },
-                { text: "Calculadora", correct: false }
-              ]
-            }
-          ]
-        },
-        'Ciencias Naturales': {
-          primerCiclo: [
-            {
-              question: "¿Con qué vemos?",
-              answers: [
-                { text: "Con los ojos", correct: true },
-                { text: "Con las manos", correct: false },
-                { text: "Con los pies", correct: false },
-                { text: "Con la nariz", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué necesitan las plantas para crecer?",
-              answers: [
-                { text: "Agua y sol", correct: true },
-                { text: "Chocolate", correct: false },
-                { text: "Leche", correct: false },
-                { text: "Juguetes", correct: false }
-              ]
-            },
-            {
-              question: "¿De dónde sale el pollito?",
-              answers: [
-                { text: "Del huevo", correct: true },
-                { text: "De la flor", correct: false },
-                { text: "De la semilla", correct: false },
-                { text: "Del árbol", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es un alimento saludable?",
-              answers: [
-                { text: "Manzana", correct: true },
-                { text: "Caramelo", correct: false },
-                { text: "Refresco", correct: false },
-                { text: "Papas fritas", correct: false }
-              ]
-            },
-            {
-              question: "¿Cuál es un recurso natural?",
-              answers: [
-                { text: "Agua", correct: true },
-                { text: "Plástico", correct: false },
-                { text: "Televisor", correct: false },
-                { text: "Teléfono", correct: false }
-              ]
-            }
-          ],
-          segundoCiclo: [
-            {
-              question: "¿Cuál es la función del corazón?",
-              answers: [
-                { text: "Bombear la sangre", correct: true },
-                { text: "Filtrar el aire", correct: false },
-                { text: "Digerir alimentos", correct: false },
-                { text: "Controlar pensamientos", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué lugar ocupa la Tierra en el sistema solar?",
-              answers: [
-                { text: "Tercer planeta", correct: true },
-                { text: "Primer planeta", correct: false },
-                { text: "Quinto planeta", correct: false },
-                { text: "Segundo planeta", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué seres vivos pueden producir su propio alimento?",
-              answers: [
-                { text: "Las plantas", correct: true },
-                { text: "Los perros", correct: false },
-                { text: "Las personas", correct: false },
-                { text: "Los peces", correct: false }
-              ]
-            },
-            {
-              question: "¿Qué es la erosión?",
-              answers: [
-                { text: "Desgaste del suelo", correct: true },
-                { text: "Formación de montañas", correct: false },
-                { text: "Creación de nubes", correct: false },
-                { text: "Crecimiento de plantas", correct: false }
-              ]
-            },
-            {
-              question: "¿Por qué es importante separar los residuos?",
-              answers: [
-                { text: "Para reciclar", correct: true },
-                { text: "Para ensuciar más", correct: false },
-                { text: "Para gastar más dinero", correct: false },
-                { text: "Para ocupar más espacio", correct: false }
-              ]
-            }
-          ]
-        }
-      };
-
-      // Elementos DOM: agregar modal de ciclo
-      const screens = {
-        login: document.getElementById('login-screen'),
-        signup: document.getElementById('signup-screen'),
-        mainMenu: document.getElementById('main-menu'),
-        patientForm: document.getElementById('patient-name-form'),
-        cycleModal: document.getElementById('cycle-modal'),
-        triviaGame: document.getElementById('trivia-game'),
-        subjectScore: document.getElementById('subject-score'),
-        finalScore: document.getElementById('final-score'),
-        scoreTable: document.getElementById('score-table-screen')
-      };
-      
-      // Funciones de Navegacion
-      function showScreen(screenId) {
-        // Hide all screens
-        Object.values(screens).forEach(screen => {
-          screen.classList.add('hidden');
-        });
-        
-        // Ocultar todas las pantallas
-        const screen = document.getElementById(screenId);
-        screen.classList.remove('hidden');
-        
-        // Actualizar la pantalla actual en el estado
-        appState.currentScreen = screenId;
-        
-        // Asegura ciclo-modal 
-        if (screenId !== 'cycle-modal') {
-          screens.cycleModal.classList.add('hidden');
-        }
-      }
-      
-      // Gestión de usuarios
-      function getUsersFromStorage() {
-        const users = localStorage.getItem('users');
-        return users ? JSON.parse(users) : [];
-      }
-      
-      function saveUsersToStorage(users) {
-        localStorage.setItem('users', JSON.stringify(users));
-      }
-      
-      function userExists(username) {
-        const users = getUsersFromStorage();
-        return users.some(user => user.username.toLowerCase() === username.toLowerCase());
-      }
-      
-      function authenticateUser(username, password) {
-        const users = getUsersFromStorage();
-        return users.find(user => 
-          user.username.toLowerCase() === username.toLowerCase() && 
-          user.password === password
-        );
-      }
-      
-      function registerUser(username, email, password) {
-        if (userExists(username)) {
-          return false;
-        }
-        
-        const users = getUsersFromStorage();
-        users.push({
-          username,
-          email,
-          password
-        });
-        
-        saveUsersToStorage(users);
-        return true;
-      }
-      
-      // Gestión de puntuaciones
-      function getScoresFromStorage() {
-        const scores = localStorage.getItem('scores');
-        return scores ? JSON.parse(scores) : [];
-      }
-      
-      function saveScoreToStorage(scoreData) {
-        const scores = getScoresFromStorage();
-        scores.push(scoreData);
-        localStorage.setItem('scores', JSON.stringify(scores));
-      }
-      
-      function displayScoreTable() {
-        const scoresTableBody = document.getElementById('scores-table-body');
-        const noScoresMessage = document.getElementById('no-scores-message');
-        const scores = getScoresFromStorage();
-        
-        if (scores.length === 0) {
-          scoresTableBody.innerHTML = '';
-          noScoresMessage.classList.remove('hidden');
-          return;
-        }
-        
-        noScoresMessage.classList.add('hidden');
-        scoresTableBody.innerHTML = '';
-        
-        scores.forEach((score, index) => {
-          const row = document.createElement('tr');
-          
-          const nameCell = document.createElement('td');
-          nameCell.textContent = score.patientName;
-          
-          // Agregar celda de ciclo
-          const cycleCell = document.createElement('td');
-          cycleCell.textContent = score.cycle || 'Primer Ciclo'; // Default for backward compatibility
-          
-          const languageCell = document.createElement('td');
-          languageCell.textContent = score.scores.Lengua + '/5';
-          
-          const mathCell = document.createElement('td');
-          mathCell.textContent = score.scores.Matemática + '/5';
-          
-          const scienceCell = document.createElement('td');
-          scienceCell.textContent = score.scores['Ciencias Naturales'] + '/5';
-          
-          const totalCell = document.createElement('td');
-          const totalScore = score.scores.Lengua + score.scores.Matemática + score.scores['Ciencias Naturales'];
-          totalCell.textContent = totalScore + '/15';
-          
-          // Agregar celda de botón de eliminación
-          const deleteCell = document.createElement('td');
-          const deleteBtn = document.createElement('button');
-          deleteBtn.className = 'delete-score-btn';
-          deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
-          deleteBtn.addEventListener('click', function() {
-            if (confirm('¿Estás seguro de que quieres eliminar este puntaje?')) {
-              const updatedScores = getScoresFromStorage().filter((s, i) => i !== index);
-              localStorage.setItem('scores', JSON.stringify(updatedScores));
-              displayScoreTable(); 
-            }
-          });
-          deleteCell.appendChild(deleteBtn);
-          
-          row.appendChild(nameCell);
-          row.appendChild(cycleCell); // Agregar celda de ciclo a la fila
-          row.appendChild(languageCell);
-          row.appendChild(mathCell);
-          row.appendChild(scienceCell);
-          row.appendChild(totalCell);
-          row.appendChild(deleteCell); // Agregue la celda de eliminación a la fila
-          
-          scoresTableBody.appendChild(row);
-        });
-      }
-      
-      // Funciones Trivia Game 
-      function startTriviaFlow() {
-        appState.currentQuestion = 0;
-        appState.subjectIndex = 0;
-        appState.scores = {
-          'Lengua': 0,
-          'Matemática': 0,
-          'Ciencias Naturales': 0
-        };
-        
-        loadSubject(appState.subjects[appState.subjectIndex]);
-        showScreen('trivia-game');
-      }
-      
-      function loadSubject(subject) {
-        appState.currentSubject = subject;
-        appState.currentQuestion = 0;
-        
-        document.getElementById('subject-title').textContent = subject;
-        loadQuestion();
-      }
-      
-      function loadQuestion() {
-        // Utilice las preguntas específicas del ciclo
-        const cycleType = appState.cycle === 'Primer Ciclo' ? 'primerCiclo' : 'segundoCiclo';
-        const question = questionsDB[appState.currentSubject][cycleType][appState.currentQuestion];
-        const questionCounter = document.getElementById('question-counter');
-        const progressFill = document.getElementById('progress-fill');
-        const questionText = document.getElementById('question-text');
-        const answersContainer = document.getElementById('answers-container');
-        
-        // Actualizar el contador de preguntas y la barra de progreso
-        questionCounter.textContent = `Pregunta ${appState.currentQuestion + 1} de 5`;
-        progressFill.style.width = `${((appState.currentQuestion + 1) / 5) * 100}%`;
-        
-        // Establecer texto de pregunta
-        questionText.textContent = question.question;
-        
-        // Borrar respuestas anteriores
-        answersContainer.innerHTML = '';
-        
-        // Mezclar respuestas para aleatorización
-        const shuffledAnswers = [...question.answers].sort(() => Math.random() - 0.5);
-        
-        // Crear y agregar botones de respuesta
-        shuffledAnswers.forEach((answer, index) => {
-          const answerButton = document.createElement('button');
-          answerButton.classList.add('answer-btn');
-          answerButton.textContent = answer.text;
-          answerButton.dataset.correct = answer.correct;
-          
-          answerButton.addEventListener('click', function() {
-            handleAnswerSelection(this);
-          });
-          
-          answersContainer.appendChild(answerButton);
-        });
-      }
-      
-      function handleAnswerSelection(selectedButton) {
-        const isCorrect = selectedButton.dataset.correct === 'true';
-        const answersContainer = document.getElementById('answers-container');
-        const buttons = answersContainer.querySelectorAll('.answer-btn');
-        
-        // Deshabilitar todos los botones
-        buttons.forEach(button => {
-          button.disabled = true;
-          
-          // Mostrar respuestas correctas/incorrectas
-          if (button.dataset.correct === 'true') {
-            button.classList.add('correct');
-          } else if (button === selectedButton && !isCorrect) {
-            button.classList.add('incorrect');
-          }
-        });
-        
-        // Actualizar puntuación si es correcta
-        if (isCorrect) {
-          appState.scores[appState.currentSubject]++;
-        }
-        
-        // Pasar a la siguiente pregunta o tema después de un breve retraso
-        setTimeout(() => {
-          appState.currentQuestion++;
-          
-          if (appState.currentQuestion >= 5) {
-            // Mostrar puntuación de la materia cuando se respondan todas las preguntas
-            showSubjectScore();
-          } else {
-            // Cargar siguiente pregunta
-            loadQuestion();
-          }
-        }, 1500);
-      }
-      
-      function showSubjectScore() {
-        const subjectScoreTitle = document.getElementById('subject-score-title');
-        const subjectScoreValue = document.getElementById('subject-score-value');
-        const subjectScoreMessage = document.getElementById('subject-score-message');
-        const nextSubjectBtn = document.getElementById('next-subject-btn');
-        
-        subjectScoreTitle.textContent = `Puntaje en ${appState.currentSubject}`;
-        subjectScoreValue.textContent = `${appState.scores[appState.currentSubject]}/5`;
-        
-        // Establecer mensaje según la puntuación
-        if (appState.scores[appState.currentSubject] === 5) {
-          subjectScoreMessage.textContent = '¡Perfecto! ¡Eres increíble!';
-          createConfetti();
-        } else if (appState.scores[appState.currentSubject] >= 4) {
-          subjectScoreMessage.textContent = '¡Excelente trabajo!';
-        } else if (appState.scores[appState.currentSubject] >= 3) {
-          subjectScoreMessage.textContent = '¡Buen trabajo!';
-        } else if (appState.scores[appState.currentSubject] >= 2) {
-          subjectScoreMessage.textContent = '¡Sigue practicando!';
-        } else {
-          subjectScoreMessage.textContent = '¡No te rindas, puedes mejorar!';
-        }
-        
-        // Actualizar el texto del botón siguiente según el tema actual
-        appState.subjectIndex++;
-        
-        if (appState.subjectIndex >= appState.subjects.length) {
-          nextSubjectBtn.textContent = 'Ver Resultado Final';
-        } else {
-          nextSubjectBtn.textContent = `Siguiente: ${appState.subjects[appState.subjectIndex]}`;
-        }
-        
-        showScreen('subject-score');
-      }
-      
-      function showFinalScore() {
-        const patientNameElement = document.getElementById('final-patient-name');
-        const languageScoreElement = document.getElementById('language-score');
-        const mathScoreElement = document.getElementById('math-score');
-        const scienceScoreElement = document.getElementById('science-score');
-        const totalScoreElement = document.getElementById('total-score');
-        
-        patientNameElement.textContent = appState.currentPatient;
-        languageScoreElement.textContent = `${appState.scores['Lengua']}/5`;
-        mathScoreElement.textContent = `${appState.scores['Matemática']}/5`;
-        scienceScoreElement.textContent = `${appState.scores['Ciencias Naturales']}/5`;
-        
-        const totalScore = appState.scores['Lengua'] + appState.scores['Matemática'] + appState.scores['Ciencias Naturales'];
-        totalScoreElement.textContent = `${totalScore}/15`;
-        
-        // Guarde la puntuación en el almacenamiento con el ciclo
-        saveScoreToStorage({
-          patientName: appState.currentPatient,
-          cycle: appState.cycle || 'Primer Ciclo', // Por defecto es Primer Ciclo si no se especifica
-          scores: {...appState.scores},
-          date: new Date().toISOString()
-        });
-        
-        //Muestre la celebración de la puntuación perfecta si todas las respuestas fueron correctas.
-        if (totalScore === 15) {
-          createConfetti();
-        }
-        
-        showScreen('final-score');
-      }
-      
-      // Efectos Visuales
-      function createConfetti() {
-        const container = document.querySelector('.app-container');
-        const colors = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#7BE495', '#6CCCF9'];
-        
-        for (let i = 0; i < 100; i++) {
-          const confetti = document.createElement('div');
-          confetti.className = 'confetti';
-          
-          // Posicion Random 
-          const posX = Math.random() * container.offsetWidth;
-          
-          // Random color
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          
-          // Tamaño aleatorio
-          const size = Math.random() * 10 + 5;
-          
-          // Rotación aleatoria
-          const rotation = Math.random() * 360;
-          
-          // Duración de la animación aleatoria
-          const duration = Math.random() * 2 + 1;
-          
-          // Aplicar estilos
-          confetti.style.left = posX + 'px';
-          confetti.style.backgroundColor = color;
-          confetti.style.width = size + 'px';
-          confetti.style.height = size + 'px';
-          confetti.style.transform = `rotate(${rotation}deg)`;
-          confetti.style.animationDuration = duration + 's';
-          
-          container.appendChild(confetti);
-          
-          // Quitar confeti después de la animación.
-          setTimeout(() => {
-            confetti.remove();
-          }, duration * 1000);
-        }
-      }
-      
-      // Agregar inicialización de animaciones de Lottie
-      function initLottieAnimations() {
-        // Animación de la mascota de inicio de sesión
-        lottie.loadAnimation({
-          container: document.getElementById('login-mascot-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets2.lottiefiles.com/packages/lf20_m9zragkd.json' // Smiling character
-        });
-        
-        // Animación de registro de usuario
-        lottie.loadAnimation({
-          container: document.getElementById('signup-user-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets9.lottiefiles.com/packages/lf20_xl3i2mkd.json' // User profile animation
-        });
-        
-        // Animación de trivia del menú.
-        lottie.loadAnimation({
-          container: document.getElementById('menu-book-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets9.lottiefiles.com/packages/lf20_qm8ufib7.json' // Colorful book animation
-        });
-        
-        // Animación de cohete de puntuación
-        lottie.loadAnimation({
-          container: document.getElementById('score-rocket-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets3.lottiefiles.com/packages/lf20_obkemuop.json' // Rocket animation
-        });
-        
-        // Animación de trofeos
-        lottie.loadAnimation({
-          container: document.getElementById('trophy-animation'),
-          renderer: 'svg',
-          loop: false,
-          autoplay: true,
-          path: 'https://assets8.lottiefiles.com/packages/lf20_rc5d0f61.json' // Trophy animation
-        });
-        
-        // Nuevo: animación del trofeo de puntuación
-        lottie.loadAnimation({
-          container: document.getElementById('score-trophy-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets8.lottiefiles.com/packages/lf20_rc5d0f61.json' // Trophy animation
-        });
-        
-        // Nuevo - Animación de lectura del menú
-        lottie.loadAnimation({
-          container: document.getElementById('menu-book-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets9.lottiefiles.com/packages/lf20_qm8ufib7.json' // Animación de libro colorido.
-        });
-        
-        // Nuevo - Animación de selección de ciclo
-        lottie.loadAnimation({
-          container: document.getElementById('cycle-animation'),
-          renderer: 'svg',
-          loop: true,
-          autoplay: true,
-          path: 'https://assets5.lottiefiles.com/packages/lf20_eijrtwvm.json' // Animación escolar/educativa
-        });
-      }
-      
-      // Inicializa las animaciones de Lottie de forma segura
-      if (window.lottie) {
-        initLottieAnimations();
-      } else {
-        console.warn('Lottie not loaded');
-      }
-
-      // Agregar activadores de animación al código existente
-      // Agregar animación de pulso al pasar el botón de menú
-      document.querySelectorAll('.menu-btn').forEach(btn => {
-        btn.addEventListener('mouseenter', function() {
-          this.classList.add('animate-pulse');
-        });
-        
-        btn.addEventListener('mouseleave', function() {
-          this.classList.remove('animate-pulse');
-        });
-      });
-
-      // Agregue animación adicional al mostrar pantallas
-      const originalShowScreen = showScreen;
-      showScreen = function(screenId) {
-        originalShowScreen(screenId);
-        
-        // Activar animaciones cuando aparecen determinadas pantallas.
-        if (screenId === 'patient-name-form') {
-          document.querySelector('#patient-name-form svg').classList.add('animate-wobble');
-        }
-        
-        if (screenId === 'score-table-screen') {
-          document.querySelectorAll('#score-table-screen .animate-grow').forEach(el => {
-            el.style.animation = 'none';
-            setTimeout(() => {
-              el.style.animation = '';
-            }, 10);
-          });
-        }
-      };
-      
-      // Event Listeners
-      
-      // Formulario Login
-      document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        const loginError = document.getElementById('login-error');
-        
-        const authenticatedUser = authenticateUser(username, password);
-        
-        if (authenticatedUser) {
-          appState.currentUser = authenticatedUser;
-          document.getElementById('user-name').textContent = authenticatedUser.username;
-          loginError.classList.add('hidden');
-          showScreen('main-menu');
-        } else {
-          loginError.classList.remove('hidden');
-        }
-      });
-      
-      // Formulario de registro
-      document.getElementById('signup-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const username = document.getElementById('new-username').value;
-        const email = document.getElementById('new-email').value;
-        const password = document.getElementById('new-password').value;
-        const signupError = document.getElementById('signup-error');
-        const signupSuccess = document.getElementById('signup-success');
-        
-        // Validación
-        if (!username || !email || !password) {
-          signupError.classList.remove('hidden');
-          signupSuccess.classList.add('hidden');
-          return;
-        }
-        
-        const registered = registerUser(username, email, password);
-        
-        if (registered) {
-          signupError.classList.add('hidden');
-          signupSuccess.classList.remove('hidden');
-          
-          // Clear form
-          document.getElementById('new-username').value = '';
-          document.getElementById('new-email').value = '';
-          document.getElementById('new-password').value = '';
-          
-          // Redirigir para iniciar sesión después de un breve retraso
-          setTimeout(() => {
-            showScreen('login-screen');
-          }, 2000);
-        } else {
-          signupError.textContent = 'Este nombre de usuario ya está en uso. Por favor elige otro.';
-          signupError.classList.remove('hidden');
-          signupSuccess.classList.add('hidden');
-        }
-      });
-      
-      // Enlaces de navegación
-      document.getElementById('signup-link').addEventListener('click', function() {
-        showScreen('signup-screen');
-      });
-      
-      document.getElementById('login-link').addEventListener('click', function() {
-        showScreen('login-screen');
-      });
-      
-      // Botones del menú principal
-      document.getElementById('trivia-menu-btn').addEventListener('click', function() {
-        showScreen('patient-name-form');
-      });
-      
-      document.getElementById('scores-menu-btn').addEventListener('click', function() {
-        displayScoreTable();
-        showScreen('score-table-screen');
-      });
-      
-      document.getElementById('logout-btn').addEventListener('click', function() {
-        appState.currentUser = null;
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-        showScreen('login-screen');
-      });
-      
-      // Formulario de nombre del paciente
-      document.getElementById('patient-form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const patientName = document.getElementById('patient-name').value;
-        
-        if (patientName) {
-          appState.currentPatient = patientName;
-          showScreen('cycle-modal'); // Mostrar selección de ciclo en lugar de iniciar trivia
-        }
-      });
-      
-      // Agregar oyentes de eventos del botón de ciclod Cycle Button Event Listeners
-      document.getElementById('primer-ciclo-btn').addEventListener('click', function() {
-        appState.cycle = 'Primer Ciclo';
-        startTriviaFlow();
-      });
-      
-      document.getElementById('segundo-ciclo-btn').addEventListener('click', function() {
-        appState.cycle = 'Segundo Ciclo';
-        startTriviaFlow();
-      });
-      
-      document.getElementById('back-to-menu-from-patient').addEventListener('click', function() {
-        showScreen('main-menu');
-      });
-      
-      // Navegación del juego de preguntas
-      document.getElementById('back-from-trivia').addEventListener('click', function() {
-        if (confirm('¿Estás seguro de que quieres salir? Se perderá tu progreso actual.')) {
-          showScreen('main-menu');
-        }
-      });
-      
-      // Navegación de puntuación de materias
-      document.getElementById('next-subject-btn').addEventListener('click', function() {
-        if (appState.subjectIndex < appState.subjects.length) {
-          loadSubject(appState.subjects[appState.subjectIndex]);
-          showScreen('trivia-game');
-        } else {
-          showFinalScore();
-        }
-      });
-      
-      // Navegación por la puntuación final
-      document.getElementById('back-to-menu-btn').addEventListener('click', function() {
-        showScreen('main-menu');
-      });
-      
-      // Navegación en la tabla de puntuación
-      document.getElementById('back-from-scores').addEventListener('click', function() {
-        showScreen('main-menu');
-      });
-      
-      // Inicializar aplicación: compruebe si hay usuarios; si no, cree uno predeterminado
-      const users = getUsersFromStorage();
-      if (users.length === 0) {
-        registerUser('demo', 'demo@example.com', 'demo123');
-      }
-    });
-  </script>
+  <!-- Lógica -->
+  <script src="logica.js"></script>
 </body>
 </html>
