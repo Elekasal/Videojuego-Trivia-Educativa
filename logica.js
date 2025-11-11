@@ -1,22 +1,29 @@
 /* ==========================================================
-🧠 LÓGICA PRINCIPAL (V4.1)
-- Mantiene el flujo y almacenamiento del V4
-- Añade botones “Volver al Menú” y ajusta navegación
+  LÓGICA PRINCIPAL V4
+  - Mantiene flujo de trabajo
+  - Arregla Lotties (no se duplican)
+  - Guarda/actualiza puntajes en Supabase (upsert)
+  - Elimina puntajes en Supabase (delete)
+  - preguntas y respuestas en orden aleatorio
+  - feedback visual verde/rojo en opciones
 ========================================================== */
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
+  // ------------------ Estado ------------------
   const estado = {
     usuarioActual: null,
     pantallaActual: 'login-screen',
     pacienteActual: null,
     materiaActual: null,
-    indicePregunta: 0,
     materias: ['Lengua', 'Matemática', 'Ciencias Naturales'],
     indiceMateria: 0,
+    indicePregunta: 0,
     ciclo: null,
-    puntajes: { 'Lengua': 0, 'Matemática': 0, 'Ciencias Naturales': 0 }
+    puntajes: { 'Lengua': 0, 'Matemática': 0, 'Ciencias Naturales': 0 },
+    // cache por materia (para no remezclar en cada render)
+    cachePreguntas: {} // { [materia]: [ {question, answers:[...]} ] }
   };
 
-  /* --------------------- Banco de preguntas (V4) --------------------- */
+  // ------------------ Banco de preguntas  ------------------
   const bancoPreguntas = {
     'Lengua': {
       primerCiclo: [
@@ -54,396 +61,341 @@ document.addEventListener('DOMContentLoaded', function () {
       primerCiclo: [
         { question: "¿Con qué vemos?", answers: [{ text: "Con los ojos", correct: true }, { text: "Con las manos", correct: false }, { text: "Con los pies", correct: false }, { text: "Con la nariz", correct: false }] },
         { question: "¿Qué necesitan las plantas para crecer?", answers: [{ text: "Agua y sol", correct: true }, { text: "Chocolate", correct: false }, { text: "Leche", correct: false }, { text: "Juguetes", correct: false }] },
-        { question: "¿De dónde sale el pollito?", answers: [{ text: "Del huevo", correct: true }, { text: "De la flor", correct: false }, { text: "De la semilla", correct: false }, { text: "Del árbol", correct: false }] },
-        { question: "¿Cuál es un alimento saludable?", answers: [{ text: "Manzana", correct: true }, { text: "Caramelo", correct: false }, { text: "Refresco", correct: false }, { text: "Papas fritas", correct: false }] },
-        { question: "¿Cuál es un recurso natural?", answers: [{ text: "Agua", correct: true }, { text: "Plástico", correct: false }, { text: "Televisor", correct: false }, { text: "Teléfono", correct: false }] }
+        { question: "¿De dónde sale el pollito?", answers: [{ text: "Del huevo", correct: true }, { text: "De la piedra", correct: false }, { text: "De la tierra", correct: false }, { text: "De la lluvia", correct: false }] },
+        { question: "¿Qué parte del cuerpo late?", answers: [{ text: "El corazón", correct: true }, { text: "La oreja", correct: false }, { text: "El hombro", correct: false }, { text: "El estómago", correct: false }] },
+        { question: "¿Qué se respira para vivir?", answers: [{ text: "Aire", correct: true }, { text: "Jugo", correct: false }, { text: "Agua", correct: false }, { text: "Tierra", correct: false }] }
       ],
       segundoCiclo: [
-        { question: "¿Cuál es la función del corazón?", answers: [{ text: "Bombear la sangre", correct: true }, { text: "Filtrar el aire", correct: false }, { text: "Digerir alimentos", correct: false }, { text: "Controlar pensamientos", correct: false }] },
-        { question: "¿Qué lugar ocupa la Tierra en el sistema solar?", answers: [{ text: "Tercer planeta", correct: true }, { text: "Primer planeta", correct: false }, { text: "Quinto planeta", correct: false }, { text: "Segundo planeta", correct: false }] },
-        { question: "¿Qué seres vivos pueden producir su propio alimento?", answers: [{ text: "Las plantas", correct: true }, { text: "Los perros", correct: false }, { text: "Las personas", correct: false }, { text: "Los peces", correct: false }] },
-        { question: "¿Qué es la erosión?", answers: [{ text: "Desgaste del suelo", correct: true }, { text: "Formación de montañas", correct: false }, { text: "Creación de nubes", correct: false }, { text: "Crecimiento de plantas", correct: false }] },
-        { question: "¿Por qué es importante separar los residuos?", answers: [{ text: "Para reciclar", correct: true }, { text: "Para ensuciar más", correct: false }, { text: "Para gastar más dinero", correct: false }, { text: "Para ocupar más espacio", correct: false }] }
+        { question: "¿Qué es un ecosistema?", answers: [{ text: "Conjunto de seres vivos y su ambiente", correct: true }, { text: "Sólo animales", correct: false }, { text: "Sólo plantas", correct: false }, { text: "Sólo rocas", correct: false }] },
+        { question: "¿Qué estrella está más cerca de la Tierra?", answers: [{ text: "El Sol", correct: true }, { text: "Sirio", correct: false }, { text: "Betelgeuse", correct: false }, { text: "Antares", correct: false }] },
+        { question: "Los pulmones forman parte del sistema…", answers: [{ text: "Respiratorio", correct: true }, { text: "Digestivo", correct: false }, { text: "Circulatorio", correct: false }, { text: "Nervioso", correct: false }] },
+        { question: "¿Qué gas es fundamental para la fotosíntesis?", answers: [{ text: "Dióxido de carbono", correct: true }, { text: "Nitrógeno", correct: false }, { text: "Ozono", correct: false }, { text: "Helio", correct: false }] },
+        { question: "¿Qué órgano bombea la sangre?", answers: [{ text: "Corazón", correct: true }, { text: "Riñón", correct: false }, { text: "Hígado", correct: false }, { text: "Estómago", correct: false }] }
       ]
     }
   };
 
-  /* --------------------- Cache de elementos --------------------- */
-  const pantallas = {
-    login: document.getElementById('login-screen'),
-    registro: document.getElementById('signup-screen'),
-    menu: document.getElementById('main-menu'),
-    paciente: document.getElementById('patient-name-form'),
-    ciclo: document.getElementById('cycle-modal'),
-    trivia: document.getElementById('trivia-game'),
-    puntajeMateria: document.getElementById('subject-score'),
-    puntajeFinal: document.getElementById('final-score'),
-    tablaPuntajes: document.getElementById('score-table-screen')
+  // ------------------ Utilidades de mezcla ------------------
+  function shuffleInPlace(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  // ------------------ DOM helpers ------------------
+  const $ = (id) => document.getElementById(id);
+  const screens = [
+    'login-screen', 'signup-screen', 'main-menu',
+    'patient-name-form', 'trivia-game', 'subject-score',
+    'final-score', 'score-table-screen', 'cycle-modal'
+  ];
+
+  function showScreen(id) {
+    screens.forEach(s => {
+      const el = $(s);
+      if (!el) return;
+      if (s === id) { el.classList.remove('hidden'); }
+      else { el.classList.add('hidden'); }
+    });
+    estado.pantallaActual = id;
+  }
+
+  // ------------------ Lotties: sin duplicados ------------------
+  const lotties = {};
+  const LOTTIE_JSON = {
+    login  : 'https://assets2.lottiefiles.com/packages/lf20_x62chJ.json',
+    signup : 'https://assets4.lottiefiles.com/packages/lf20_06a6pf9i.json',
+    book   : 'https://assets4.lottiefiles.com/packages/lf20_3rwasyjy.json',
+    cycle  : 'https://assets4.lottiefiles.com/private_files/lf30_yjxp5z.json',
+    rocket : 'https://assets4.lottiefiles.com/packages/lf20_rsa9yofm.json',
+    trophy : 'https://assets7.lottiefiles.com/packages/lf20_jbrw3hcz.json',
+    medal  : 'https://assets9.lottiefiles.com/packages/lf20_ydo1amjm.json'
   };
 
-  const elTituloMateria = document.getElementById('subject-title');
-  const elContador = document.getElementById('question-counter');
-  const elBarraProgreso = document.getElementById('progress-fill');
-  const elTextoPregunta = document.getElementById('question-text');
-  const elContenedorRespuestas = document.getElementById('answers-container');
-
-  const elTituloPuntajeMateria = document.getElementById('subject-score-title');
-  const elValorPuntajeMateria = document.getElementById('subject-score-value');
-  const elMensajePuntajeMateria = document.getElementById('subject-score-message');
-
-  const elNombreFinal = document.getElementById('final-patient-name');
-  const elLenguaFinal = document.getElementById('language-score');
-  const elMatematicaFinal = document.getElementById('math-score');
-  const elCienciasFinal = document.getElementById('science-score');
-  const elTotalFinal = document.getElementById('total-score');
-
-  /* --------------------- Navegación de pantallas --------------------- */
-  function mostrarPantalla(idPantalla) {
-    Object.values(pantallas).forEach(seccion => seccion.classList.add('hidden'));
-    const seccion = document.getElementById(idPantalla);
-    if (seccion) seccion.classList.remove('hidden');
-    estado.pantallaActual = idPantalla;
-    if (idPantalla !== 'cycle-modal') pantallas.ciclo.classList.add('hidden');
+  function loadLottieOnce(id, path, loop=true) {
+    if (lotties[id]) return; // ya cargada
+    const container = $(id);
+    if (!container) return;
+    lotties[id] = lottie.loadAnimation({
+      container, renderer: 'svg', loop, autoplay: true, path
+    });
+  }
+  function destroyLotties() {
+    Object.values(lotties).forEach(anim => anim.destroy());
+    Object.keys(lotties).forEach(k => delete lotties[k]);
+  }
+  function initLotties() {
+    loadLottieOnce('login-mascot-animation',  LOTTIE_JSON.login);
+    loadLottieOnce('signup-user-animation',   LOTTIE_JSON.signup);
+    loadLottieOnce('menu-book-animation',     LOTTIE_JSON.book);
+    loadLottieOnce('cycle-animation',         LOTTIE_JSON.cycle);
+    loadLottieOnce('score-rocket-animation',  LOTTIE_JSON.rocket);
+    loadLottieOnce('trophy-animation',        LOTTIE_JSON.trophy);
+    loadLottieOnce('score-trophy-animation',  LOTTIE_JSON.medal);
   }
 
-  /* --------------------- Usuarios (LocalStorage) --------------------- */
-  function obtenerUsuarios() {
-    const str = localStorage.getItem('users');
-    return str ? JSON.parse(str) : [];
-  }
-  function guardarUsuarios(usuarios) { localStorage.setItem('users', JSON.stringify(usuarios)); }
-  function existeUsuario(username) {
-    return obtenerUsuarios().some(u => u.username.toLowerCase() === username.toLowerCase());
-  }
-  function autenticarUsuario(username, password) {
-    return obtenerUsuarios().find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
-  }
-  function registrarUsuario(username, email, password) {
-    if (existeUsuario(username)) return false;
-    const lista = obtenerUsuarios(); lista.push({ username, email, password });
-    guardarUsuarios(lista); return true;
+  // ------------------ Acceso banco preguntas ------------------
+  function preguntasDe(materia, ciclo) {
+    const key = ciclo === 'Primer Ciclo' ? 'primerCiclo' : 'segundoCiclo';
+    return bancoPreguntas[materia][key];
   }
 
-  /* --------------------- Puntajes (LocalStorage) --------------------- */
-  function obtenerPuntajes() {
-    const str = localStorage.getItem('scores');
-    return str ? JSON.parse(str) : [];
+  function obtenerSetMezclado(materia) {
+    if (estado.cachePreguntas[materia]) return estado.cachePreguntas[materia];
+    // Mezcla el orden de preguntas y el de respuestas de cada pregunta (copia segura)
+    const base = preguntasDe(materia, estado.ciclo);
+    const mezcladas = shuffleInPlace([...base]).map(q => ({
+      question: q.question,
+      answers : shuffleInPlace([...q.answers].map(a => ({ ...a })))
+    }));
+    estado.cachePreguntas[materia] = mezcladas;
+    return mezcladas;
   }
-  function guardarPuntaje(registro) {
-    const lista = obtenerPuntajes(); lista.push(registro);
-    localStorage.setItem('scores', JSON.stringify(lista));
-  }
-  function renderizarTablaPuntajes() {
-    const cuerpo = document.getElementById('scores-table-body');
-    const vacio = document.getElementById('no-scores-message');
-    const lista = obtenerPuntajes();
 
-    if (!lista.length) {
-      cuerpo.innerHTML = '';
-      vacio.classList.remove('hidden');
+  // ------------------ Render de una pregunta ------------------
+  function setPreguntaActual() {
+    const materia = estado.materias[estado.indiceMateria];
+    const set = obtenerSetMezclado(materia);
+    const p = set[estado.indicePregunta];
+
+    $('subject-title').textContent = materia;
+    $('question-text').textContent = p.question;
+
+    const cont = $('answers-container');
+    cont.innerHTML = '';
+
+    // crear botones con feedback visual
+    p.answers.forEach((a, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn';
+      btn.textContent = `${idx + 1}. ${a.text}`;
+      btn.dataset.correct = a.correct ? '1' : '0';
+      btn.addEventListener('click', () => handleRespuesta(a.correct, btn));
+      cont.appendChild(btn);
+    });
+
+    const progreso = Math.round(((estado.indicePregunta + 1) / set.length) * 100);
+    $('question-counter').textContent = `Pregunta ${estado.indicePregunta + 1} de ${set.length}`;
+    $('progress-fill').style.width = `${progreso}%`;
+  }
+
+  function handleRespuesta(correcta, btnClickeado) {
+    const materia = estado.materias[estado.indiceMateria];
+
+    // deshabilitar todas para evitar doble click
+    const botones = Array.from(document.querySelectorAll('#answers-container .answer-btn'));
+    botones.forEach(b => b.disabled = true);
+
+    // marcar visual
+    if (correcta) {
+      btnClickeado.classList.add('is-correct');
+      estado.puntajes[materia]++;
+    } else {
+      btnClickeado.classList.add('is-wrong');
+      // remarcar cuál era la correcta
+      const correcto = botones.find(b => b.dataset.correct === '1');
+      if (correcto) correcto.classList.add('is-correct');
+    }
+
+    // avanzar con pequeña pausa
+    setTimeout(() => {
+      const set = obtenerSetMezclado(materia);
+      if (estado.indicePregunta < set.length - 1) {
+        estado.indicePregunta++;
+        setPreguntaActual();
+      } else {
+        mostrarPuntajeMateria(materia);
+      }
+    }, 650);
+  }
+
+  function mostrarPuntajeMateria(materia) {
+    $('subject-score-title').textContent = `Puntaje en ${materia}`;
+    $('subject-score-value').textContent = `${estado.puntajes[materia]}/5`;
+    $('subject-score-message').textContent =
+      estado.puntajes[materia] >= 4 ? '¡Excelente!' :
+      estado.puntajes[materia] === 3 ? '¡Muy bien!' : '¡Sigue practicando!';
+
+    showScreen('subject-score');
+
+    $('next-subject-btn').onclick = () => {
+      if (estado.indiceMateria < estado.materias.length - 1) {
+        estado.indiceMateria++;
+        estado.indicePregunta = 0;
+        setPreguntaActual();
+        showScreen('trivia-game');
+      } else {
+        mostrarPuntajeFinal();
+      }
+    };
+  }
+
+  async function mostrarPuntajeFinal() {
+    $('final-patient-name').textContent = estado.pacienteActual;
+    $('language-score').textContent = `${estado.puntajes['Lengua']}/5`;
+    $('math-score').textContent     = `${estado.puntajes['Matemática']}/5`;
+    $('science-score').textContent  = `${estado.puntajes['Ciencias Naturales']}/5`;
+    const total = estado.puntajes['Lengua'] + estado.puntajes['Matemática'] + estado.puntajes['Ciencias Naturales'];
+    $('total-score').textContent = `${total}/15`;
+    showScreen('final-score');
+
+    // Guardar/actualizar en BD
+    const save = await window.DB.saveAttempt({
+      patientName: estado.pacienteActual,
+      cycle: estado.ciclo,
+      scores: { ...estado.puntajes }
+    });
+    if (!save.ok) console.error('Error guardando intento:', save.error);
+  }
+
+  // ------------------ Render tabla de puntajes ------------------
+  async function renderScores() {
+    const body = $('scores-table-body');
+    body.innerHTML = '';
+    const res = await window.DB.fetchAttempts();
+    if (!res.ok) {
+      console.error(res.error);
+      $('no-scores-message').classList.remove('hidden');
       return;
     }
-    vacio.classList.add('hidden');
-    cuerpo.innerHTML = '';
+    const rows = res.data;
+    if (!rows.length) {
+      $('no-scores-message').classList.remove('hidden');
+      return;
+    }
+    $('no-scores-message').classList.add('hidden');
 
-    lista.forEach((item, idx) => {
-      const fila = document.createElement('tr');
+    for (const r of rows) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${r.patientName}</td>
+        <td>${r.cycle}</td>
+        <td>${r.scores['Lengua']}/5</td>
+        <td>${r.scores['Matemática']}/5</td>
+        <td>${r.scores['Ciencias Naturales']}/5</td>
+        <td>${r.total}/15</td>
+        <td>
+          <button class="delete-row" data-id="${r.id}" title="Eliminar">
+            <i class="fas fa-trash"></i>
+          </button>
+        </td>`;
+      body.appendChild(tr);
+    }
 
-      const celNombre = document.createElement('td'); celNombre.textContent = item.patientName;
-      const celCiclo = document.createElement('td'); celCiclo.textContent = item.cycle || 'Primer Ciclo';
-      const celLen = document.createElement('td'); celLen.textContent = item.scores['Lengua'] + '/5';
-      const celMat = document.createElement('td'); celMat.textContent = item.scores['Matemática'] + '/5';
-      const celCie = document.createElement('td'); celCie.textContent = item.scores['Ciencias Naturales'] + '/5';
-      const celTotal = document.createElement('td');
-      const total = item.scores['Lengua'] + item.scores['Matemática'] + item.scores['Ciencias Naturales'];
-      celTotal.textContent = total + '/15';
-
-      const celAccion = document.createElement('td');
-      const btnBorrar = document.createElement('button');
-      btnBorrar.className = 'delete-score-btn';
-      btnBorrar.innerHTML = '<i class="fas fa-trash"></i>';
-      btnBorrar.addEventListener('click', () => {
-        if (confirm('¿Eliminar este puntaje?')) {
-          const nueva = obtenerPuntajes().filter((_, i) => i !== idx);
-          localStorage.setItem('scores', JSON.stringify(nueva));
-          renderizarTablaPuntajes();
-        }
+    body.querySelectorAll('.delete-row').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.dataset.id;
+        if (!confirm('¿Eliminar este puntaje de la base de datos?')) return;
+        const del = await window.DB.deleteAttempt(id);
+        if (!del.ok) { alert('No se pudo eliminar.'); return; }
+        await renderScores();
       });
-      celAccion.appendChild(btnBorrar);
-
-      fila.appendChild(celNombre);
-      fila.appendChild(celCiclo);
-      fila.appendChild(celLen);
-      fila.appendChild(celMat);
-      fila.appendChild(celCie);
-      fila.appendChild(celTotal);
-      fila.appendChild(celAccion);
-
-      cuerpo.appendChild(fila);
     });
   }
 
-  /* --------------------- Flujo de Trivia --------------------- */
-  function iniciarFlujoTrivia() {
-    estado.indicePregunta = 0;
-    estado.indiceMateria = 0;
-    estado.puntajes = { 'Lengua': 0, 'Matemática': 0, 'Ciencias Naturales': 0 };
-    cargarMateria(estado.materias[estado.indiceMateria]);
-    mostrarPantalla('trivia-game');
-  }
-  function cargarMateria(nombreMateria) {
-    estado.materiaActual = nombreMateria;
-    estado.indicePregunta = 0;
-    elTituloMateria.textContent = nombreMateria;
-    cargarPregunta();
-  }
-  function cargarPregunta() {
-    const tipoCiclo = (estado.ciclo === 'Primer Ciclo') ? 'primerCiclo' : 'segundoCiclo';
-    const pregunta = bancoPreguntas[estado.materiaActual][tipoCiclo][estado.indicePregunta];
+  // ------------------ Binding de eventos (una sola vez) ------------------
+  let eventosAtados = false;
+  function bindEventos() {
+    if (eventosAtados) return;
+    eventosAtados = true;
 
-    elContador.textContent = `Pregunta ${estado.indicePregunta + 1} de 5`;
-    elBarraProgreso.style.width = `${((estado.indicePregunta + 1) / 5) * 100}%`;
-    elTextoPregunta.textContent = pregunta.question;
-
-    elContenedorRespuestas.innerHTML = '';
-    const mezcladas = [...pregunta.answers].sort(() => Math.random() - 0.5);
-
-    mezcladas.forEach(ans => {
-      const btn = document.createElement('button');
-      btn.classList.add('answer-btn');
-      btn.textContent = ans.text;
-      btn.dataset.correct = ans.correct; // "true"/"false"
-      btn.addEventListener('click', () => procesarRespuesta(btn));
-      elContenedorRespuestas.appendChild(btn);
-    });
-  }
-  function procesarRespuesta(botonSeleccionado) {
-    const esCorrecta = (botonSeleccionado.dataset.correct === 'true');
-    const botones = elContenedorRespuestas.querySelectorAll('.answer-btn');
-
-    botones.forEach(b => {
-      b.disabled = true;
-      if (b.dataset.correct === 'true') b.classList.add('correct');
-      else if (b === botonSeleccionado && !esCorrecta) b.classList.add('incorrect');
-    });
-
-    if (esCorrecta) estado.puntajes[estado.materiaActual]++;
-
-    setTimeout(() => {
-      estado.indicePregunta++;
-      if (estado.indicePregunta >= 5) {
-        mostrarPuntajeMateria();
-      } else {
-        cargarPregunta();
+    // Login
+    $('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = $('username').value.trim();
+      const password = $('password').value.trim();
+      const r = await window.DB.signInDocente({ email, password });
+      if (!r.ok) {
+        $('login-error').classList.remove('hidden');
+        return;
       }
-    }, 1200);
+      $('login-error').classList.add('hidden');
+      estado.usuarioActual = email;
+      $('user-name').textContent = email.split('@')[0] || 'Docente';
+      showScreen('main-menu');
+    });
+
+    // Ir a registro
+    $('signup-link').addEventListener('click', () => showScreen('signup-screen'));
+    $('login-link').addEventListener('click', () => showScreen('login-screen'));
+
+    // Registro
+    $('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = $('new-email').value.trim();
+      const password = $('new-password').value.trim();
+      const username = $('new-username').value.trim();
+      const r = await window.DB.signUpDocente({ email, password, username });
+      if (!r.ok) {
+        $('signup-error').classList.remove('hidden');
+        $('signup-success').classList.add('hidden');
+        return;
+      }
+      $('signup-error').classList.add('hidden');
+      $('signup-success').classList.remove('hidden');
+    });
+
+    // Menú principal
+    $('trivia-menu-btn').addEventListener('click', () => {
+      showScreen('patient-name-form');
+    });
+    $('scores-menu-btn').addEventListener('click', async () => {
+      await renderScores();
+      showScreen('score-table-screen');
+    });
+    $('logout-btn').addEventListener('click', async () => {
+      await window.DB.signOutDocente();
+      destroyLotties();
+      initLotties();
+      showScreen('login-screen');
+    });
+
+    // Nombre paciente
+    $('patient-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = $('patient-name').value.trim();
+      if (!name) return;
+      estado.pacienteActual = name;
+
+      // opcional: registrar paciente
+      await window.DB.savePatient({ patientName: name });
+
+      // elegir ciclo
+      showScreen('cycle-modal');
+    });
+    $('back-to-menu-from-patient').addEventListener('click', () => showScreen('main-menu'));
+
+    // Selección de ciclo
+    $('primer-ciclo-btn').addEventListener('click', () => {
+      estado.ciclo = 'Primer Ciclo';
+      empezarTrivia();
+    });
+    $('segundo-ciclo-btn').addEventListener('click', () => {
+      estado.ciclo = 'Segundo Ciclo';
+      empezarTrivia();
+    });
+
+    // Botones de navegación
+    $('back-from-trivia').addEventListener('click', () => showScreen('main-menu'));
+    $('go-menu-from-trivia').addEventListener('click', () => showScreen('main-menu'));
+    $('go-menu-from-subject').addEventListener('click', () => showScreen('main-menu'));
+    $('back-to-menu-btn').addEventListener('click', () => showScreen('main-menu'));
+    $('back-from-scores').addEventListener('click', () => showScreen('main-menu'));
   }
 
-  /* --------------------- Resúmenes --------------------- */
-  function mostrarPuntajeMateria() {
-    elTituloPuntajeMateria.textContent = `Puntaje en ${estado.materiaActual}`;
-    elValorPuntajeMateria.textContent = `${estado.puntajes[estado.materiaActual]}/5`;
-
-    const s = estado.puntajes[estado.materiaActual];
-    if (s === 5) { elMensajePuntajeMateria.textContent = '¡Perfecto! ¡Eres increíble!'; crearConfeti(); }
-    else if (s >= 4) elMensajePuntajeMateria.textContent = '¡Excelente trabajo!';
-    else if (s >= 3) elMensajePuntajeMateria.textContent = '¡Buen trabajo!';
-    else if (s >= 2) elMensajePuntajeMateria.textContent = '¡Sigue practicando!';
-    else elMensajePuntajeMateria.textContent = '¡No te rindas, puedes mejorar!';
-
-    estado.indiceMateria++;
-    const btnSiguiente = document.getElementById('next-subject-btn');
-    if (estado.indiceMateria >= estado.materias.length) btnSiguiente.textContent = 'Ver Resultado Final';
-    else btnSiguiente.textContent = `Siguiente: ${estado.materias[estado.indiceMateria]}`;
-
-    mostrarPantalla('subject-score');
+  function empezarTrivia() {
+    estado.puntajes = { 'Lengua':0, 'Matemática':0, 'Ciencias Naturales':0 };
+    estado.indiceMateria = 0;
+    estado.indicePregunta = 0;
+    estado.cachePreguntas = {}; // reset de mezclas por si cambia ciclo o paciente
+    setPreguntaActual();
+    showScreen('trivia-game');
   }
 
-  function mostrarPuntajeFinal() {
-    elNombreFinal.textContent = estado.pacienteActual;
-    elLenguaFinal.textContent = `${estado.puntajes['Lengua']}/5`;
-    elMatematicaFinal.textContent = `${estado.puntajes['Matemática']}/5`;
-    elCienciasFinal.textContent = `${estado.puntajes['Ciencias Naturales']}/5`;
-    const total = estado.puntajes['Lengua'] + estado.puntajes['Matemática'] + estado.puntajes['Ciencias Naturales'];
-    elTotalFinal.textContent = `${total}/15`;
-
-    guardarPuntaje({
-      patientName: estado.pacienteActual,
-      cycle: estado.ciclo || 'Primer Ciclo',
-      scores: { ...estado.puntajes },
-      date: new Date().toISOString()
-    });
-
-    if (total === 15) crearConfeti();
-    mostrarPantalla('final-score');
-  }
-
-  /* --------------------- Confeti & Lottie --------------------- */
-  function crearConfeti() {
-    const contenedor = document.querySelector('.app-container');
-    const colores = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#7BE495', '#6CCCF9'];
-    for (let i = 0; i < 80; i++) {
-      const c = document.createElement('div');
-      c.className = 'confetti';
-      const posX = Math.random() * contenedor.offsetWidth;
-      const color = colores[Math.floor(Math.random() * colores.length)];
-      const size = Math.random() * 10 + 4;
-      const rot = Math.random() * 360;
-      const dur = Math.random() * 1.8 + 0.9;
-
-      c.style.left = posX + 'px';
-      c.style.backgroundColor = color;
-      c.style.width = size + 'px';
-      c.style.height = size + 'px';
-      c.style.transform = `rotate(${rot}deg)`;
-      c.style.animationDuration = dur + 's';
-
-      contenedor.appendChild(c);
-      setTimeout(() => c.remove(), dur * 1000);
-    }
-  }
-
-  function inicializarAnimacionesLottie() {
-    lottie.loadAnimation({
-      container: document.getElementById('login-mascot-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets2.lottiefiles.com/packages/lf20_m9zragkd.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('signup-user-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets9.lottiefiles.com/packages/lf20_xl3i2mkd.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('menu-book-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets9.lottiefiles.com/packages/lf20_qm8ufib7.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('score-rocket-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets3.lottiefiles.com/packages/lf20_obkemuop.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('trophy-animation'),
-      renderer: 'svg', loop: false, autoplay: true,
-      path: 'https://assets8.lottiefiles.com/packages/lf20_rc5d0f61.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('score-trophy-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets8.lottiefiles.com/packages/lf20_rc5d0f61.json'
-    });
-    lottie.loadAnimation({
-      container: document.getElementById('cycle-animation'),
-      renderer: 'svg', loop: true, autoplay: true,
-      path: 'https://assets5.lottiefiles.com/packages/lf20_eijrtwvm.json'
-    });
-  }
-  if (window.lottie) inicializarAnimacionesLottie();
-
-  /* --------------------- Listeners de navegación --------------------- */
-
-  // Login
-  document.getElementById('login-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value;
-    const error = document.getElementById('login-error');
-    const auth = autenticarUsuario(user, pass);
-
-    if (auth) {
-      estado.usuarioActual = auth;
-      document.getElementById('user-name').textContent = auth.username;
-      error.classList.add('hidden');
-      mostrarPantalla('main-menu');
-    } else {
-      error.classList.remove('hidden');
-    }
-  });
-
-  // Registro
-  document.getElementById('signup-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const user = document.getElementById('new-username').value.trim();
-    const email = document.getElementById('new-email').value.trim();
-    const pass = document.getElementById('new-password').value;
-    const error = document.getElementById('signup-error');
-    const ok = document.getElementById('signup-success');
-
-    if (!user || !email || !pass) { error.classList.remove('hidden'); ok.classList.add('hidden'); return; }
-    const creado = registrarUsuario(user, email, pass);
-    if (creado) {
-      error.classList.add('hidden'); ok.classList.remove('hidden');
-      document.getElementById('new-username').value = '';
-      document.getElementById('new-email').value = '';
-      document.getElementById('new-password').value = '';
-      setTimeout(() => mostrarPantalla('login-screen'), 1500);
-    } else {
-      error.textContent = 'Este nombre de usuario ya está en uso. Por favor elige otro.';
-      error.classList.remove('hidden'); ok.classList.add('hidden');
-    }
-  });
-
-  // Cambios de pantalla login/registro
-  document.getElementById('signup-link').addEventListener('click', () => mostrarPantalla('signup-screen'));
-  document.getElementById('login-link').addEventListener('click', () => mostrarPantalla('login-screen'));
-
-  // Menú principal
-  document.getElementById('trivia-menu-btn').addEventListener('click', () => mostrarPantalla('patient-name-form'));
-  document.getElementById('scores-menu-btn').addEventListener('click', () => {
-    renderizarTablaPuntajes();
-    mostrarPantalla('score-table-screen');
-  });
-
-  // Logout
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    estado.usuarioActual = null;
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-    mostrarPantalla('login-screen');
-  });
-
-  // Paciente
-  document.getElementById('patient-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const nombre = document.getElementById('patient-name').value.trim();
-    if (nombre) {
-      estado.pacienteActual = nombre;
-      mostrarPantalla('cycle-modal');
-    }
-  });
-  document.getElementById('back-to-menu-from-patient').addEventListener('click', () => mostrarPantalla('main-menu'));
-
-  // Selección de ciclo
-  document.getElementById('primer-ciclo-btn').addEventListener('click', () => { estado.ciclo = 'Primer Ciclo'; iniciarFlujoTrivia(); });
-  document.getElementById('segundo-ciclo-btn').addEventListener('click', () => { estado.ciclo = 'Segundo Ciclo'; iniciarFlujoTrivia(); });
-
-  // Trivia: salir (flecha) y nuevo botón “Volver al menú”
-  document.getElementById('back-from-trivia').addEventListener('click', () => {
-    if (confirm('¿Salir de la trivia? Se perderá tu progreso actual.')) mostrarPantalla('main-menu');
-  });
-  document.getElementById('go-menu-from-trivia').addEventListener('click', () => {
-    if (confirm('¿Volver al Menú Principal? Se perderá tu progreso actual.')) mostrarPantalla('main-menu');
-  });
-
-  // Puntaje por materia: continuar o volver al menú
-  document.getElementById('next-subject-btn').addEventListener('click', () => {
-    if (estado.indiceMateria < estado.materias.length) {
-      cargarMateria(estado.materias[estado.indiceMateria]);
-      mostrarPantalla('trivia-game');
-    } else {
-      mostrarPuntajeFinal();
-    }
-  });
-  document.getElementById('go-menu-from-subject').addEventListener('click', () => mostrarPantalla('main-menu'));
-
-  // Puntaje final → menú
-  document.getElementById('back-to-menu-btn').addEventListener('click', () => mostrarPantalla('main-menu'));
-
-  // Tabla de puntajes → menú
-  document.getElementById('back-from-scores').addEventListener('click', () => mostrarPantalla('main-menu'));
-
-  /* --------------------- Usuario demo (primera vez) --------------------- */
-  if (!obtenerUsuarios().length) registrarUsuario('demo', 'demo@example.com', 'demo123');
+  // ------------------ Inicio ------------------
+  initLotties();
+  bindEventos();
+  showScreen('login-screen');
 });

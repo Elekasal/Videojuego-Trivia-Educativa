@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
   <!-- ==========================================================
-  🧠 HEAD
-  Mantiene librerías y estructura del V4
+  Librerías y estructura V4
   ========================================================== -->
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Juego Educativo Hospitalario</title>
 
-  <!-- TailwindCSS -->
+  <link rel="icon" href="data:,">
+  <!-- Tailwind -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -17,55 +17,48 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <!-- Animate.css -->
   <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
-  <!-- Estilos locales -->
+  <!-- Estilos -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <div id="app" class="app-container">
-    <!-- 🧩 LOGIN -->
+    <!-- LOGIN -->
     <div id="login-screen" class="login-container fade-in">
       <div class="login-header">
         <h1 class="text-3xl font-bold text-center" style="color: var(--primary);">
-          ¡Bienvenido a JuegoHospital!
+          ¡Bienvenido a Juguemos con Trivia Educativa!
         </h1>
-        <!-- Lottie más pequeña y centrada -->
         <div class="lottie-container lottie-sm my-4" id="login-mascot-animation"></div>
       </div>
 
       <form id="login-form">
         <div class="mb-4">
-          <label for="username" class="block text-sm font-medium mb-1">Nombre de usuario</label>
+          <label for="username" class="block text-sm font-medium mb-1">Usuario o correo (docente)</label>
           <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-
         <div class="mb-6">
           <label for="password" class="block text-sm font-medium mb-1">Contraseña</label>
           <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-
         <div id="login-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-          <p>Usuario o contraseña incorrectos. Inténtalo de nuevo.</p>
+          <p>Usuario o contraseña incorrectos.</p>
         </div>
-
         <button type="submit" id="login-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
           Iniciar Sesión
         </button>
-
         <div class="mt-4 text-center">
-          <p>¿No tienes una cuenta?
-            <a href="javascript:void(0)" id="signup-link" class="text-primary font-bold">Registrarse</a>
+          <p>¿No tenés cuenta?
+            <a href="javascript:void(0)" id="signup-link" class="text-primary font-bold">Registrarse (docente)</a>
           </p>
         </div>
       </form>
     </div>
 
-    <!-- 🧾 REGISTRO -->
+    <!-- REGISTRO -->
     <div id="signup-screen" class="signup-container hidden fade-in">
       <div class="signup-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--secondary);">
-          Crear una cuenta
-        </h1>
+        <h1 class="text-3xl font-bold text-center" style="color: var(--secondary);">Crear una cuenta docente</h1>
         <div class="lottie-container lottie-sm my-4" id="signup-user-animation"></div>
       </div>
 
@@ -74,42 +67,36 @@
           <label for="new-username" class="block text-sm font-medium mb-1">Nombre de usuario</label>
           <input type="text" id="new-username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-
         <div class="mb-4">
           <label for="new-email" class="block text-sm font-medium mb-1">Correo electrónico</label>
           <input type="email" id="new-email" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-
         <div class="mb-6">
           <label for="new-password" class="block text-sm font-medium mb-1">Contraseña</label>
           <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
         </div>
-
         <div id="signup-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-          <p>Por favor completa todos los campos correctamente.</p>
+          <p>Por favor completá todos los campos correctamente.</p>
         </div>
-
         <div id="signup-success" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded">
-          <p>¡Cuenta creada exitosamente! Ya puedes iniciar sesión.</p>
+          <p>¡Cuenta creada correctamente!.</p>
         </div>
-
         <button type="submit" id="signup-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
           Registrarse
         </button>
-
         <div class="mt-4 text-center">
-          <p>¿Ya tienes una cuenta?
+          <p>¿Ya tenés cuenta?
             <a href="javascript:void(0)" id="login-link" class="text-secondary font-bold">Iniciar Sesión</a>
           </p>
         </div>
       </form>
     </div>
 
-    <!-- 🎮 MENÚ PRINCIPAL -->
+    <!-- MENÚ -->
     <div id="main-menu" class="menu-container hidden fade-in">
       <div class="menu-header">
         <h1 class="text-3xl font-bold text-center mb-2">¡Hola <span id="user-name">Amigo</span>!</h1>
-        <p class="text-gray-500 text-center">¿A qué quieres jugar hoy?</p>
+        <p class="text-gray-500 text-center">¿Por donde te gustaría empezar?</p>
         <div id="menu-book-animation" class="lottie-container lottie-md mx-auto mb-4"></div>
       </div>
 
@@ -117,7 +104,6 @@
         <button id="trivia-menu-btn" class="btn menu-btn trivia-btn">
           <i class="fas fa-question-circle"></i> Trivia Educativa
         </button>
-
         <button id="scores-menu-btn" class="btn menu-btn scores-btn">
           <i class="fas fa-trophy"></i> Tabla de Puntajes
         </button>
@@ -128,45 +114,38 @@
       </button>
     </div>
 
-    <!-- 🧒 FORM NOMBRE PACIENTE -->
+    <!-- NOMBRE PACIENTE -->
     <div id="patient-name-form" class="trivia-container hidden fade-in">
       <div class="trivia-header text-center">
         <h1 class="text-3xl font-bold" style="color: var(--primary);">Antes de comenzar...</h1>
       </div>
-
       <form id="patient-form">
         <div class="mb-6">
-          <label for="patient-name" class="block text-lg font-medium mb-2">¿Cómo te llamas?</label>
+          <label for="patient-name" class="block text-lg font-medium mb-2">¿Cómo te llamás?</label>
           <input type="text" id="patient-name" class="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg" required>
         </div>
-
         <button type="submit" id="start-trivia-btn" class="btn w-full text-white py-3 rounded-md font-bold text-lg">
           ¡Comenzar Trivia!
         </button>
-
         <button type="button" id="back-to-menu-from-patient" class="btn w-full mt-4 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
           Volver al menú
         </button>
       </form>
     </div>
 
-    <!-- 🧮 MODAL CICLO -->
+    <!-- MODAL CICLO -->
     <div id="cycle-modal" class="modal hidden fade-in">
       <div class="modal-content">
-        <h2 class="text-2xl font-bold mb-2 text-center">Selecciona el ciclo</h2>
+        <h2 class="text-2xl font-bold mb-2 text-center">Seleccioná el ciclo</h2>
         <div id="cycle-animation" class="lottie-container lottie-sm my-2 mx-auto"></div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <button id="primer-ciclo-btn" class="btn cycle-btn text-white font-bold">
-            Primer Ciclo<br><span class="text-sm">(1° a 3°)</span>
-          </button>
-          <button id="segundo-ciclo-btn" class="btn cycle-btn text-white font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-            Segundo Ciclo<br><span class="text-sm">(4° a 6°)</span>
-          </button>
+          <button id="primer-ciclo-btn" class="btn cycle-btn text-white font-bold">Primer Ciclo<br><span class="text-sm">(1° a 3°)</span></button>
+          <button id="segundo-ciclo-btn" class="btn cycle-btn text-white font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Segundo Ciclo<br><span class="text-sm">(4° a 6°)</span></button>
         </div>
       </div>
     </div>
 
-    <!-- ❓ TRIVIA -->
+    <!-- TRIVIA -->
     <div id="trivia-game" class="trivia-container hidden fade-in">
       <div class="trivia-header">
         <div class="flex justify-between items-center">
@@ -187,13 +166,12 @@
         <div id="answers-container" class="mt-6"></div>
       </div>
 
-      <!-- NUEVO: botón claro para volver al menú -->
       <button id="go-menu-from-trivia" class="btn mt-2 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
         Volver al Menú Principal
       </button>
     </div>
 
-    <!-- 🧾 PUNTAJE POR MATERIA -->
+    <!-- PUNTAJE POR MATERIA -->
     <div id="subject-score" class="trivia-container hidden fade-in">
       <div class="text-center">
         <h2 class="text-2xl font-bold mb-2" id="subject-score-title">Puntaje en Materia</h2>
@@ -203,18 +181,13 @@
           <p id="subject-score-message" class="text-gray-600">¡Buen trabajo!</p>
         </div>
         <div class="flex flex-col gap-3 items-center mt-6">
-          <button id="next-subject-btn" class="btn text-white py-3 px-8 rounded-md font-bold text-lg">
-            Continuar
-          </button>
-          <!-- NUEVO: volver al menú desde puntaje por materia -->
-          <button id="go-menu-from-subject" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-            Volver al Menú Principal
-          </button>
+          <button id="next-subject-btn" class="btn text-white py-3 px-8 rounded-md font-bold text-lg">Continuar</button>
+          <button id="go-menu-from-subject" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Volver al Menú Principal</button>
         </div>
       </div>
     </div>
 
-    <!-- 🏆 PUNTAJE FINAL -->
+    <!-- PUNTAJE FINAL -->
     <div id="final-score" class="trivia-container hidden fade-in">
       <div class="text-center">
         <h2 class="text-2xl font-bold mb-2">¡Trivia Completada!</h2>
@@ -247,12 +220,13 @@
       </div>
     </div>
 
-    <!-- 📋 TABLA DE PUNTAJES -->
+    <!-- TABLA DE PUNTAJES -->
     <div id="score-table-screen" class="score-container hidden fade-in">
       <div class="score-header text-center">
         <h2 class="text-2xl font-bold">Tabla de Puntajes</h2>
         <div id="score-trophy-animation" class="lottie-container lottie-sm mx-auto mb-4"></div>
       </div>
+
       <div class="overflow-x-auto">
         <table class="score-table">
           <thead>
@@ -269,11 +243,11 @@
           <tbody id="scores-table-body"></tbody>
         </table>
       </div>
+
       <div id="no-scores-message" class="text-center py-8 text-gray-500">
         <p>Aún no hay puntajes registrados.</p>
       </div>
 
-      <!-- NUEVO: volver al menú desde la tabla -->
       <div class="flex justify-center mt-6">
         <button id="back-from-scores" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
           Volver al Menú Principal
@@ -284,6 +258,10 @@
 
   <!-- Lottie -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Servicio BD -->
+  <script src="services/supabase.js"></script>
   <!-- Lógica -->
   <script src="logica.js"></script>
 </body>
