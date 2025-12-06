@@ -1,268 +1,308 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- ==========================================================
-  Librerías y estructura V4
-  ========================================================== -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Juego Educativo Hospitalario</title>
-
-  <link rel="icon" href="data:,">
-  <!-- Tailwind -->
+  <title>Juguemos con Trivia Educativa</title>
+  <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <!-- Font Awesome -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Animate.css -->
-  <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
-  <!-- Estilos -->
+  <!-- Estilos Propios -->
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
   <div id="app" class="app-container">
+
     <!-- LOGIN -->
-    <div id="login-screen" class="login-container fade-in">
-      <div class="login-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--primary);">
-          ¡Bienvenido a Juguemos con Trivia Educativa!
-        </h1>
+    <div id="login-screen" class="screen fade-in">
+      <div class="login-header text-center mb-8">
+        <h1 class="text-3xl font-bold" style="color: var(--primary);">¡Bienvenido a Juguemos con Trivia Educativa!</h1>
         <div class="lottie-container lottie-sm my-4" id="login-mascot-animation"></div>
       </div>
-
-      <form id="login-form">
+      <form id="login-form" class="max-w-sm mx-auto">
         <div class="mb-4">
-          <label for="username" class="block text-sm font-medium mb-1">Usuario o correo (docente)</label>
-          <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+          <label class="block text-sm font-medium mb-1">Correo Docente</label>
+          <input type="email" id="username" class="w-full px-3 py-2 border rounded-md" placeholder="docente@hospital.com" required>
         </div>
         <div class="mb-6">
-          <label for="password" class="block text-sm font-medium mb-1">Contraseña</label>
-          <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+          <label class="block text-sm font-medium mb-1">Contraseña</label>
+          <input type="password" id="password" class="w-full px-3 py-2 border rounded-md" required>
         </div>
-        <div id="login-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-          <p>Usuario o contraseña incorrectos.</p>
-        </div>
-        <button type="submit" id="login-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
-          Iniciar Sesión
-        </button>
+        <button type="submit" class="btn w-full text-white py-2 rounded-md font-bold text-lg">Iniciar Sesión</button>
+        <p id="login-msg" class="text-red-500 text-center mt-2 hidden"></p>
         <div class="mt-4 text-center">
-          <p>¿No tenés cuenta?
-            <a href="javascript:void(0)" id="signup-link" class="text-primary font-bold">Registrarse (docente)</a>
-          </p>
+          <a href="#" id="signup-link" class="text-primary font-bold">Registrarse aquí</a>
         </div>
       </form>
     </div>
 
     <!-- REGISTRO -->
-    <div id="signup-screen" class="signup-container hidden fade-in">
-      <div class="signup-header">
-        <h1 class="text-3xl font-bold text-center" style="color: var(--secondary);">Crear una cuenta docente</h1>
-        <div class="lottie-container lottie-sm my-4" id="signup-user-animation"></div>
-      </div>
-
-      <form id="signup-form">
-        <div class="mb-4">
-          <label for="new-username" class="block text-sm font-medium mb-1">Nombre de usuario</label>
-          <input type="text" id="new-username" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-        </div>
-        <div class="mb-4">
-          <label for="new-email" class="block text-sm font-medium mb-1">Correo electrónico</label>
-          <input type="email" id="new-email" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-        </div>
-        <div class="mb-6">
-          <label for="new-password" class="block text-sm font-medium mb-1">Contraseña</label>
-          <input type="password" id="new-password" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
-        </div>
-        <div id="signup-error" class="hidden bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-          <p>Por favor completá todos los campos correctamente.</p>
-        </div>
-        <div id="signup-success" class="hidden bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded">
-          <p>¡Cuenta creada correctamente!.</p>
-        </div>
-        <button type="submit" id="signup-button" class="btn w-full text-white py-2 rounded-md font-bold text-lg">
-          Registrarse
-        </button>
+    <div id="signup-screen" class="screen hidden fade-in">
+      <h1 class="text-3xl font-bold text-center mb-6" style="color: var(--secondary);">Crear cuenta Docente</h1>
+      <form id="signup-form" class="max-w-sm mx-auto">
+        <input type="email" id="new-email" class="w-full mb-3 px-3 py-2 border rounded-md" placeholder="Correo electrónico" required>
+        <input type="password" id="new-password" class="w-full mb-6 px-3 py-2 border rounded-md" placeholder="Contraseña" required>
+        <button type="submit" class="btn w-full text-white py-2 rounded-md font-bold">Registrarse</button>
+        <p id="signup-msg" class="text-center mt-2"></p>
         <div class="mt-4 text-center">
-          <p>¿Ya tenés cuenta?
-            <a href="javascript:void(0)" id="login-link" class="text-secondary font-bold">Iniciar Sesión</a>
-          </p>
+          <a href="#" id="login-link" class="text-secondary font-bold">Ya tengo cuenta</a>
         </div>
       </form>
     </div>
 
-    <!-- MENÚ -->
-    <div id="main-menu" class="menu-container hidden fade-in">
-      <div class="menu-header">
-        <h1 class="text-3xl font-bold text-center mb-2">¡Hola <span id="user-name">Amigo</span>!</h1>
-        <p class="text-gray-500 text-center">¿Por donde te gustaría empezar?</p>
-        <div id="menu-book-animation" class="lottie-container lottie-md mx-auto mb-4"></div>
+    <!-- MODAL RE-AUTH (SEGURIDAD DOCENTE) -->
+    <div id="modal-reauth" class="modal hidden" style="z-index: 60;">
+      <div class="modal-content text-center max-w-sm relative">
+        <button class="absolute top-2 right-2 text-gray-500" onclick="toggleModal('modal-reauth', false)">&times;</button>
+        <div class="mb-4 text-yellow-500 text-4xl"><i class="fas fa-lock"></i></div>
+        <h2 class="text-xl font-bold mb-2">Seguridad Docente</h2>
+        <p class="text-sm text-gray-500 mb-4">Por favor, confirma tu contraseña para acceder a las opciones de edición.</p>
+        <input type="password" id="reauth-password" class="w-full px-3 py-2 border rounded-md mb-4" placeholder="Tu contraseña">
+        <div class="flex gap-2 justify-center">
+          <button id="btn-confirm-reauth" class="btn bg-blue-600 text-white w-full font-bold">Confirmar Acceso</button>
+        </div>
       </div>
+    </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <button id="trivia-menu-btn" class="btn menu-btn trivia-btn">
-          <i class="fas fa-question-circle"></i> Trivia Educativa
+    <!-- MENÚ PRINCIPAL -->
+    <div id="main-menu" class="screen hidden fade-in">
+      <div class="menu-header text-center mb-6">
+        <h1 class="text-3xl font-bold">¡Hola Docente!</h1>
+        <p class="text-gray-500">¿Por dónde te gustaría empezar?</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+        <button id="btn-docente-panel" class="btn menu-btn p-8 flex flex-col items-center">
+          <i class="fas fa-chalkboard-teacher text-4xl mb-2"></i>
+          <span>Opciones Docente</span>
         </button>
-        <button id="scores-menu-btn" class="btn menu-btn scores-btn">
-          <i class="fas fa-trophy"></i> Tabla de Puntajes
+        <button id="btn-paciente-section" class="btn menu-btn p-8 flex flex-col items-center" style="background: linear-gradient(to right, #16a34a, #22c55e);">
+          <i class="fas fa-child text-4xl mb-2"></i>
+          <span>Sección Pacientes</span>
         </button>
       </div>
+      <div class="text-center mt-8">
+        <button id="logout-btn" class="text-gray-500 underline">Cerrar Sesión</button>
+      </div>
+    </div>
 
-      <button id="logout-btn" class="btn logout-btn" title="Cerrar sesión">
-        <i class="fas fa-sign-out-alt"></i>
+    <!-- PANEL DOCENTE (Gestión) -->
+    <div id="docente-panel" class="screen hidden fade-in">
+      <h2 class="text-2xl font-bold text-center mb-6">Panel Docente</h2>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto mb-8">
+        <!-- Tarjeta Crear Materia -->
+        <div class="bg-white p-4 rounded-xl shadow-md">
+          <h3 class="font-bold mb-2 text-primary">Gestionar Materias</h3>
+          <p class="text-sm text-gray-500 mb-3">Crea materias, edita preguntas y contenido.</p>
+          <button id="btn-add-subject-modal" class="btn w-full text-sm">Gestionar Contenido</button>
+        </div>
+        <!-- Tarjeta Resultados -->
+        <div class="bg-white p-4 rounded-xl shadow-md">
+          <h3 class="font-bold mb-2 text-secondary">Resultados y Exportación</h3>
+          <p class="text-sm text-gray-500 mb-3">Ver puntajes de pacientes y exportar.</p>
+          <button id="btn-view-results" class="btn w-full text-sm" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Ver Tabla</button>
+        </div>
+      </div>
+      
+      <button class="btn-back mx-auto block text-gray-500" onclick="showScreen('main-menu')">Volver al Menú</button>
+    </div>
+
+    <!-- MODAL GESTOR DE CONTENIDO -->
+    <div id="modal-crud" class="modal hidden">
+      <div class="modal-content relative max-h-screen overflow-y-auto" style="width: 95%; max-width: 600px;">
+        <button class="absolute top-2 right-2 text-gray-500 text-xl" onclick="toggleModal('modal-crud', false)">&times;</button>
+        <h2 class="text-xl font-bold mb-4">Gestor de Contenido</h2>
+        
+        <!-- Pestañas -->
+        <div class="flex border-b mb-4 text-sm">
+          <button class="tab-btn active px-3 py-2 font-bold text-primary border-b-2 border-primary" data-tab="tab-materia">Materias</button>
+          <button class="tab-btn px-3 py-2 text-gray-500" data-tab="tab-pregunta" id="btn-tab-pregunta">Nueva/Editar Pregunta</button>
+        </div>
+
+        <!-- Tab Materia (Lista y Creación) -->
+        <div id="tab-materia" class="tab-content">
+          <!-- Crear Materia -->
+          <div class="bg-blue-50 p-3 rounded-lg mb-4 border border-blue-100">
+            <h3 class="font-bold text-sm mb-2 text-blue-700">Crear Nueva Materia</h3>
+            <div class="flex gap-2">
+              <input type="text" id="input-subject-name" class="flex-1 border p-2 rounded text-sm" placeholder="Nombre (ej: Historia)">
+              <button id="btn-save-subject" class="btn bg-blue-600 text-white px-4 text-sm">Crear</button>
+            </div>
+          </div>
+
+          <!-- Lista Materias -->
+          <h3 class="font-bold text-sm mb-2 text-gray-600">Mis Materias (Click para ver preguntas)</h3>
+          <div id="subjects-list-crud" class="space-y-2 max-h-60 overflow-y-auto mb-4">
+            <!-- Lista generada por JS -->
+          </div>
+          
+          <!-- Contenedor desplegable de preguntas -->
+          <div id="selected-subject-questions" class="hidden border-t pt-3 bg-gray-50 p-3 rounded-md animate__animated animate__fadeIn">
+             <div class="flex justify-between items-center mb-2">
+               <h4 class="font-bold text-primary text-sm">Preguntas de: <span id="lbl-selected-subject" class="text-black">Materia</span></h4>
+               <button class="text-xs bg-gray-200 px-2 py-1 rounded hover:bg-gray-300" onclick="document.getElementById('selected-subject-questions').classList.add('hidden')">Cerrar</button>
+             </div>
+             <div id="questions-list-container" class="space-y-2 max-h-60 overflow-y-auto">
+               <!-- Lista de preguntas -->
+             </div>
+          </div>
+        </div>
+
+        <!-- Tab Pregunta (Formulario) -->
+        <div id="tab-pregunta" class="tab-content hidden">
+          <div class="flex justify-between items-center mb-2">
+            <h3 class="font-bold" id="form-question-title">Nueva Pregunta</h3>
+            <button id="btn-cancel-edit" class="text-xs text-red-500 underline hidden">Cancelar Edición</button>
+          </div>
+          
+          <select id="select-subject-crud" class="w-full border p-2 rounded mb-2 bg-white text-sm"></select>
+          <select id="select-cycle-crud" class="w-full border p-2 rounded mb-2 bg-white text-sm">
+            <option value="Primer Ciclo">Primer Ciclo (1°-3°)</option>
+            <option value="Segundo Ciclo">Segundo Ciclo (4°-6°)</option>
+          </select>
+          <textarea id="input-question-text" class="w-full border p-2 rounded mb-2 text-sm" rows="2" placeholder="Escribe la pregunta..."></textarea>
+          
+          <div class="space-y-2 mb-4">
+            <div class="flex items-center gap-2">
+               <div class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></div>
+               <input type="text" class="input-answer w-full border p-2 rounded text-sm" placeholder="Respuesta Correcta" data-correct="true">
+            </div>
+            <div class="flex items-center gap-2">
+               <div class="w-3 h-3 rounded-full bg-red-400 flex-shrink-0"></div>
+               <input type="text" class="input-answer w-full border p-2 rounded text-sm" placeholder="Incorrecta 1" data-correct="false">
+            </div>
+            <div class="flex items-center gap-2">
+               <div class="w-3 h-3 rounded-full bg-red-400 flex-shrink-0"></div>
+               <input type="text" class="input-answer w-full border p-2 rounded text-sm" placeholder="Incorrecta 2" data-correct="false">
+            </div>
+            <div class="flex items-center gap-2">
+               <div class="w-3 h-3 rounded-full bg-red-400 flex-shrink-0"></div>
+               <input type="text" class="input-answer w-full border p-2 rounded text-sm" placeholder="Incorrecta 3" data-correct="false">
+            </div>
+          </div>
+          <button id="btn-save-question" class="btn w-full py-2">Guardar Pregunta</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN PACIENTE -->
+    <div id="patient-welcome" class="screen hidden fade-in">
+      <h1 class="text-3xl font-bold text-center text-primary mb-6">¡Bienvenido Alumno!</h1>
+      <div class="max-w-sm mx-auto">
+        <label class="block mb-2 font-bold">¿Cuál es tu nombre?</label>
+        <input type="text" id="patient-name-input" class="w-full px-4 py-3 border rounded-lg text-lg mb-4" placeholder="Tu nombre aquí">
+        <button id="btn-confirm-patient" class="btn w-full text-white py-3 rounded-md font-bold text-lg">CONFIRMAR</button>
+        <button class="btn-back w-full mt-4" onclick="showScreen('main-menu')">Volver (Solo Docentes)</button>
+      </div>
+    </div>
+
+    <div id="subject-selection" class="screen hidden fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">¡Hola <span id="display-patient-name" class="text-secondary"></span>!</h2>
+        <button onclick="showScreen('patient-welcome')" class="text-sm text-gray-500"><i class="fas fa-sign-out-alt"></i> Salir</button>
+      </div>
+      <p class="text-center mb-4">¿Qué te gustaría aprender hoy?</p>
+      <div id="subjects-grid" class="grid grid-cols-1 gap-4 max-w-md mx-auto mb-6"></div>
+      <button id="btn-go-paint" class="btn w-full py-3 font-bold mb-2" style="background: linear-gradient(to right, #f97316, #fb923c);">
+        <i class="fas fa-palette mr-2"></i> Zona Recreativa
       </button>
     </div>
 
-    <!-- NOMBRE PACIENTE -->
-    <div id="patient-name-form" class="trivia-container hidden fade-in">
-      <div class="trivia-header text-center">
-        <h1 class="text-3xl font-bold" style="color: var(--primary);">Antes de comenzar...</h1>
-      </div>
-      <form id="patient-form">
-        <div class="mb-6">
-          <label for="patient-name" class="block text-lg font-medium mb-2">¿Cómo te llamás?</label>
-          <input type="text" id="patient-name" class="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg" required>
+    <!-- MODAL CICLO PACIENTE -->
+    <div id="modal-cycle-patient" class="modal hidden">
+      <div class="modal-content text-center">
+        <h2 class="text-2xl font-bold mb-4">Selecciona tu Ciclo</h2>
+        <div class="grid grid-cols-1 gap-4">
+          <button class="btn cycle-select-btn bg-blue-500 text-white p-4 rounded-lg" data-cycle="Primer Ciclo">Primer Ciclo (1° a 3°)</button>
+          <button class="btn cycle-select-btn bg-green-500 text-white p-4 rounded-lg" data-cycle="Segundo Ciclo">Segundo Ciclo (4° a 6°)</button>
         </div>
-        <button type="submit" id="start-trivia-btn" class="btn w-full text-white py-3 rounded-md font-bold text-lg">
-          ¡Comenzar Trivia!
-        </button>
-        <button type="button" id="back-to-menu-from-patient" class="btn w-full mt-4 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-          Volver al menú
-        </button>
-      </form>
-    </div>
-
-    <!-- MODAL CICLO -->
-    <div id="cycle-modal" class="modal hidden fade-in">
-      <div class="modal-content">
-        <h2 class="text-2xl font-bold mb-2 text-center">Seleccioná el ciclo</h2>
-        <div id="cycle-animation" class="lottie-container lottie-sm my-2 mx-auto"></div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <button id="primer-ciclo-btn" class="btn cycle-btn text-white font-bold">Primer Ciclo<br><span class="text-sm">(1° a 3°)</span></button>
-          <button id="segundo-ciclo-btn" class="btn cycle-btn text-white font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Segundo Ciclo<br><span class="text-sm">(4° a 6°)</span></button>
-        </div>
+        <button class="mt-4 text-gray-500 underline" onclick="toggleModal('modal-cycle-patient', false)">Cancelar</button>
       </div>
     </div>
 
-    <!-- TRIVIA -->
-    <div id="trivia-game" class="trivia-container hidden fade-in">
-      <div class="trivia-header">
-        <div class="flex justify-between items-center">
-          <button id="back-from-trivia" class="btn text-white px-3 py-2 rounded-md" title="Salir de la trivia" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-            <i class="fas fa-arrow-left"></i>
-          </button>
-          <h2 class="text-2xl font-bold" id="subject-title">Materia</h2>
-          <div class="w-5"></div>
-        </div>
-        <p class="text-sm text-gray-500 text-center mt-2" id="question-counter">Pregunta 1 de 5</p>
-        <div class="progress-bar mt-4">
-          <div class="progress-bar-fill" id="progress-fill" style="width: 20%"></div>
-        </div>
+    <!-- JUEGO TRIVIA -->
+    <div id="trivia-game" class="screen hidden fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <button onclick="endTriviaEarly()" class="text-gray-500"><i class="fas fa-arrow-left"></i> Salir</button>
+        <h2 id="game-subject-title" class="font-bold text-xl text-primary">Materia</h2>
+        <span id="game-timer" class="font-mono bg-gray-200 px-2 rounded hidden">00:00</span>
       </div>
-
-      <div class="question-card">
-        <h3 class="text-xl font-medium mb-4" id="question-text">¿Pregunta de ejemplo?</h3>
-        <div id="answers-container" class="mt-6"></div>
+      <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+        <div id="game-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
       </div>
-
-      <button id="go-menu-from-trivia" class="btn mt-2 text-white py-2 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-        Volver al Menú Principal
-      </button>
-    </div>
-
-    <!-- PUNTAJE POR MATERIA -->
-    <div id="subject-score" class="trivia-container hidden fade-in">
-      <div class="text-center">
-        <h2 class="text-2xl font-bold mb-2" id="subject-score-title">Puntaje en Materia</h2>
-        <div class="lottie-container lottie-sm my-4 mx-auto" id="score-rocket-animation"></div>
-        <div class="bg-white rounded-xl shadow-lg p-6 max-w-sm mx-auto">
-          <div class="text-6xl font-bold mb-4" id="subject-score-value" style="color: var(--primary);">0/5</div>
-          <p id="subject-score-message" class="text-gray-600">¡Buen trabajo!</p>
-        </div>
-        <div class="flex flex-col gap-3 items-center mt-6">
-          <button id="next-subject-btn" class="btn text-white py-3 px-8 rounded-md font-bold text-lg">Continuar</button>
-          <button id="go-menu-from-subject" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Volver al Menú Principal</button>
-        </div>
+      <div class="question-card text-center">
+        <p id="motivational-msg" class="text-sm text-green-600 font-bold mb-2 h-6"></p>
+        <h3 id="game-question-text" class="text-xl font-medium mb-6">¿Cargando pregunta...?</h3>
+        <div id="game-answers-grid" class="grid grid-cols-1 gap-3"></div>
       </div>
     </div>
 
     <!-- PUNTAJE FINAL -->
-    <div id="final-score" class="trivia-container hidden fade-in">
-      <div class="text-center">
-        <h2 class="text-2xl font-bold mb-2">¡Trivia Completada!</h2>
-        <div class="lottie-container lottie-sm my-4 mx-auto" id="trophy-animation"></div>
-        <div class="bg-white rounded-xl shadow-lg p-6 max-w-md mx-auto">
-          <h3 class="text-xl font-bold mb-4">
-            Resultados para <span id="final-patient-name">Estudiante</span>
-          </h3>
-          <div class="grid grid-cols-3 gap-4 mb-6">
-            <div>
-              <p class="text-sm text-gray-500">Lengua</p>
-              <div class="text-2xl font-bold" id="language-score" style="color: var(--primary);">0/5</div>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Matemática</p>
-              <div class="text-2xl font-bold" id="math-score" style="color: var(--secondary);">0/5</div>
-            </div>
-            <div>
-              <p class="text-sm text-gray-500">Ciencias</p>
-              <div class="text-2xl font-bold" id="science-score" style="color: var(--accent);">0/5</div>
-            </div>
-          </div>
-          <div class="py-3 border-t border-gray-200">
-            <p class="text-lg font-bold">Puntaje Total: <span id="total-score">0/15</span></p>
-          </div>
-        </div>
-        <button id="back-to-menu-btn" class="btn mt-8 text-white py-3 px-8 rounded-md font-bold text-lg">
-          Volver al Menú Principal
-        </button>
+    <div id="level-score" class="screen hidden fade-in text-center">
+      <div class="lottie-container lottie-sm mx-auto mb-4" id="confetti-anim"></div>
+      <h2 class="text-3xl font-bold text-primary mb-2">¡Felicitaciones!</h2>
+      <p class="mb-6 text-gray-600">Has completado <span id="score-subject-name" class="font-bold"></span></p>
+      <div class="bg-white rounded-xl shadow-lg p-6 max-w-xs mx-auto mb-6">
+        <div class="text-5xl font-bold mb-2" id="score-number">4/5</div>
+        <p id="score-feedback" class="text-sm">¡Eres increíble!</p>
+      </div>
+      <button onclick="showScreen('subject-selection')" class="btn w-full max-w-xs mx-auto mb-3">Jugar otra materia</button>
+      <button onclick="showScreen('paint-screen')" class="btn w-full max-w-xs mx-auto bg-gray-400">Ir a Dibujar</button>
+    </div>
+
+    <!-- ZONA RECREATIVA -->
+    <div id="paint-screen" class="screen hidden fade-in">
+      <h2 class="text-center font-bold text-2xl text-secondary mb-2">Zona Recreativa</h2>
+      <p class="text-center text-gray-500 text-sm mb-4">¡Dibuja libremente!</p>
+      <div class="canvas-wrapper bg-white shadow-lg rounded-lg mx-auto overflow-hidden relative" style="max-width: 100%; height: 350px; touch-action: none;">
+        <canvas id="drawing-board" class="w-full h-full cursor-crosshair"></canvas>
+      </div>
+      <div class="flex justify-center gap-2 mt-4 flex-wrap">
+        <button class="color-btn w-8 h-8 rounded-full bg-black border-2 border-white shadow-sm" data-color="#000000"></button>
+        <button class="color-btn w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow-sm" data-color="#ef4444"></button>
+        <button class="color-btn w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow-sm" data-color="#3b82f6"></button>
+        <button class="color-btn w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow-sm" data-color="#22c55e"></button>
+        <button class="color-btn w-8 h-8 rounded-full bg-yellow-400 border-2 border-white shadow-sm" data-color="#facc15"></button>
+        <button class="color-btn w-8 h-8 rounded-full bg-purple-500 border-2 border-white shadow-sm" data-color="#a855f7"></button>
+        <div class="w-px h-8 bg-gray-300 mx-2"></div>
+        <button id="btn-clear-canvas" class="p-2 bg-gray-200 rounded text-gray-700 font-bold text-xs"><i class="fas fa-trash"></i> Borrar</button>
+        <button onclick="showScreen('subject-selection')" class="p-2 bg-red-100 text-red-600 rounded font-bold text-xs">Salir</button>
       </div>
     </div>
 
-    <!-- TABLA DE PUNTAJES -->
-    <div id="score-table-screen" class="score-container hidden fade-in">
-      <div class="score-header text-center">
-        <h2 class="text-2xl font-bold">Tabla de Puntajes</h2>
-        <div id="score-trophy-animation" class="lottie-container lottie-sm mx-auto mb-4"></div>
+    <!-- TABLA RESULTADOS -->
+    <div id="results-screen" class="screen hidden fade-in">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">Progreso de Alumnos</h2>
+        <button id="btn-export-csv" class="btn text-xs bg-green-600 text-white"><i class="fas fa-file-excel mr-1"></i> Exportar</button>
       </div>
-
-      <div class="overflow-x-auto">
-        <table class="score-table">
-          <thead>
+      <div class="overflow-x-auto bg-white rounded-lg shadow">
+        <table class="w-full text-left border-collapse">
+          <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
             <tr>
-              <th>Nombre</th>
-              <th>Ciclo</th>
-              <th>Lengua</th>
-              <th>Matemática</th>
-              <th>Ciencias</th>
-              <th>Total</th>
-              <th>Acción</th>
+              <th class="p-3">Paciente</th>
+              <th class="p-3">Materia</th>
+              <th class="p-3">Ciclo</th>
+              <th class="p-3">Puntaje</th>
+              <th class="p-3">Fecha</th>
             </tr>
           </thead>
-          <tbody id="scores-table-body"></tbody>
+          <tbody id="results-table-body" class="text-sm"></tbody>
         </table>
       </div>
-
-      <div id="no-scores-message" class="text-center py-8 text-gray-500">
-        <p>Aún no hay puntajes registrados.</p>
-      </div>
-
-      <div class="flex justify-center mt-6">
-        <button id="back-from-scores" class="btn text-white py-2 px-6 rounded-md font-bold" style="background: linear-gradient(to right, var(--secondary), var(--accent));">
-          Volver al Menú Principal
-        </button>
-      </div>
+      <div id="no-data-msg" class="text-center p-8 text-gray-500 hidden">No hay registros aún.</div>
+      <button class="btn-back mt-4" onclick="showScreen('docente-panel')">Volver</button>
     </div>
+
   </div>
 
-  <!-- Lottie -->
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"></script>
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Servicio BD -->
   <script src="services/supabase.js"></script>
-  <!-- Lógica -->
   <script src="logica.js"></script>
 </body>
 </html>

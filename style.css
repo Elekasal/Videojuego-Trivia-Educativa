@@ -1,8 +1,9 @@
 /* ==========================================================
-   Estilos V4 (Responsive + Accesibilidad)
+   style.css (VERSIÓN COMPLETA RESTAURADA V5)
    - Tipografía y paddings fluidos
    - Lotties responsivas
-   - Tabla con scroll en móvil (sin perder columnas)
+   - Tabla con scroll en móvil
+   - Modales y utilidades
    ========================================================== */
 
 :root{
@@ -150,9 +151,11 @@ body{
 .score-table .delete-row:hover{ background:#f8fafc; }
 #no-scores-message{ color:#64748b; }
 
-/* ------------------ Modal ciclo ------------------ */
+/* ------------------ Modal (General) ------------------ */
 .modal{
   position:fixed; inset:0;
+  /* AGREGADO: z-index alto para asegurar que tape todo */
+  z-index: 50; 
   background:rgba(0,0,0,.35);
   display:flex; align-items:center; justify-content:center;
   padding: 12px;

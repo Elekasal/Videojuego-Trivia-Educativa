@@ -1,401 +1,585 @@
-/* ==========================================================
-  LÓGICA PRINCIPAL V4
-  - Mantiene flujo de trabajo
-  - Arregla Lotties (no se duplican)
-  - Guarda/actualiza puntajes en Supabase (upsert)
-  - Elimina puntajes en Supabase (delete)
-  - preguntas y respuestas en orden aleatorio
-  - feedback visual verde/rojo en opciones
-========================================================== */
-document.addEventListener('DOMContentLoaded', () => {
-  // ------------------ Estado ------------------
-  const estado = {
-    usuarioActual: null,
-    pantallaActual: 'login-screen',
-    pacienteActual: null,
-    materiaActual: null,
-    materias: ['Lengua', 'Matemática', 'Ciencias Naturales'],
-    indiceMateria: 0,
-    indicePregunta: 0,
-    ciclo: null,
-    puntajes: { 'Lengua': 0, 'Matemática': 0, 'Ciencias Naturales': 0 },
-    // cache por materia (para no remezclar en cada render)
-    cachePreguntas: {} // { [materia]: [ {question, answers:[...]} ] }
+document.addEventListener('DOMContentLoaded', async () => {
+  
+  // --- ESTADO GLOBAL ---
+  const state = {
+    user: null,
+    currentScreen: 'login-screen',
+    patientName: '',
+    selectedSubject: null, 
+    selectedCycle: null,
+    questions: [],
+    currentQuestionIndex: 0,
+    score: { correct: 0, incorrect: 0 },
+    editingQuestionId: null, // Para saber si editamos o creamos
+    motivationalPhrases: [
+      "¡Tú puedes!", "¡Sigue así!", "¡Lo estás haciendo genial!", 
+      "¡No te rindas!", "¡Eres muy inteligente!", "¡Casi lo tienes!"
+    ]
   };
 
-  // ------------------ Banco de preguntas  ------------------
-  const bancoPreguntas = {
-    'Lengua': {
-      primerCiclo: [
-        { question: "¿Qué palabra rima con sol?", answers: [{ text: "Farol", correct: true }, { text: "Casa", correct: false }, { text: "Árbol", correct: false }, { text: "Mesa", correct: false }] },
-        { question: "¿Con qué letra comienza la palabra zapato?", answers: [{ text: "Z", correct: true }, { text: "S", correct: false }, { text: "C", correct: false }, { text: "X", correct: false }] },
-        { question: "¿Cuál es un nombre de cosa?", answers: [{ text: "Lápiz", correct: true }, { text: "Correr", correct: false }, { text: "Feliz", correct: false }, { text: "Rápido", correct: false }] },
-        { question: "¿Con qué signo termina una oración interrogativa?", answers: [{ text: "?", correct: true }, { text: ".", correct: false }, { text: "!", correct: false }, { text: ",", correct: false }] },
-        { question: "¿Cuál es una oración completa?", answers: [{ text: "El niño juega con la pelota", correct: true }, { text: "Casa grande", correct: false }, { text: "Muy feliz", correct: false }, { text: "Corriendo rápido", correct: false }] }
-      ],
-      segundoCiclo: [
-        { question: "¿Qué tipo de texto narra una historia con personajes?", answers: [{ text: "Narrativo", correct: true }, { text: "Informativo", correct: false }, { text: "Instructivo", correct: false }, { text: "Poético", correct: false }] },
-        { question: "¿Cuál de estas palabras está mal escrita?", answers: [{ text: "Acer", correct: true }, { text: "Hacer", correct: false }, { text: "Casa", correct: false }, { text: "Perro", correct: false }] },
-        { question: "¿Para qué sirve el punto y seguido?", answers: [{ text: "Para separar oraciones en un mismo párrafo", correct: true }, { text: "Para terminar un párrafo", correct: false }, { text: "Para hacer una pregunta", correct: false }, { text: "Para indicar sorpresa", correct: false }] },
-        { question: "¿Qué es un protagonista?", answers: [{ text: "El personaje principal de una historia", correct: true }, { text: "Un tipo de verbo", correct: false }, { text: "Un signo de puntuación", correct: false }, { text: "Una figura literaria", correct: false }] },
-        { question: "¿Cuál es un adjetivo en la oración 'El perro grande ladra'?", answers: [{ text: "Grande", correct: true }, { text: "El", correct: false }, { text: "Perro", correct: false }, { text: "Ladra", correct: false }] }
-      ]
-    },
-    'Matemática': {
-      primerCiclo: [
-        { question: "¿Cuánto es 7 + 5?", answers: [{ text: "12", correct: true }, { text: "11", correct: false }, { text: "13", correct: false }, { text: "10", correct: false }] },
-        { question: "¿Cuál es el mayor número?", answers: [{ text: "27", correct: true }, { text: "18", correct: false }, { text: "21", correct: false }, { text: "16", correct: false }] },
-        { question: "¿Qué día viene después del martes?", answers: [{ text: "Miércoles", correct: true }, { text: "Jueves", correct: false }, { text: "Lunes", correct: false }, { text: "Domingo", correct: false }] },
-        { question: "¿Cuántos lados tiene un cuadrado?", answers: [{ text: "4", correct: true }, { text: "3", correct: false }, { text: "5", correct: false }, { text: "6", correct: false }] },
-        { question: "¿Qué objeto tiene forma de círculo?", answers: [{ text: "Pelota", correct: true }, { text: "Libro", correct: false }, { text: "Cuaderno", correct: false }, { text: "Puerta", correct: false }] }
-      ],
-      segundoCiclo: [
-        { question: "¿Cuánto es 45 ÷ 5?", answers: [{ text: "9", correct: true }, { text: "8", correct: false }, { text: "7", correct: false }, { text: "10", correct: false }] },
-        { question: "¿Cuál es la mitad de 60?", answers: [{ text: "30", correct: true }, { text: "25", correct: false }, { text: "35", correct: false }, { text: "40", correct: false }] },
-        { question: "¿Cuánto es 7 × 8?", answers: [{ text: "56", correct: true }, { text: "54", correct: false }, { text: "48", correct: false }, { text: "64", correct: false }] },
-        { question: "¿Cuál de estos números es par?", answers: [{ text: "14", correct: true }, { text: "21", correct: false }, { text: "35", correct: false }, { text: "49", correct: false }] },
-        { question: "¿Qué instrumento se usa para medir ángulos?", answers: [{ text: "Transportador", correct: true }, { text: "Regla", correct: false }, { text: "Compás", correct: false }, { text: "Calculadora", correct: false }] }
-      ]
-    },
-    'Ciencias Naturales': {
-      primerCiclo: [
-        { question: "¿Con qué vemos?", answers: [{ text: "Con los ojos", correct: true }, { text: "Con las manos", correct: false }, { text: "Con los pies", correct: false }, { text: "Con la nariz", correct: false }] },
-        { question: "¿Qué necesitan las plantas para crecer?", answers: [{ text: "Agua y sol", correct: true }, { text: "Chocolate", correct: false }, { text: "Leche", correct: false }, { text: "Juguetes", correct: false }] },
-        { question: "¿De dónde sale el pollito?", answers: [{ text: "Del huevo", correct: true }, { text: "De la piedra", correct: false }, { text: "De la tierra", correct: false }, { text: "De la lluvia", correct: false }] },
-        { question: "¿Qué parte del cuerpo late?", answers: [{ text: "El corazón", correct: true }, { text: "La oreja", correct: false }, { text: "El hombro", correct: false }, { text: "El estómago", correct: false }] },
-        { question: "¿Qué se respira para vivir?", answers: [{ text: "Aire", correct: true }, { text: "Jugo", correct: false }, { text: "Agua", correct: false }, { text: "Tierra", correct: false }] }
-      ],
-      segundoCiclo: [
-        { question: "¿Qué es un ecosistema?", answers: [{ text: "Conjunto de seres vivos y su ambiente", correct: true }, { text: "Sólo animales", correct: false }, { text: "Sólo plantas", correct: false }, { text: "Sólo rocas", correct: false }] },
-        { question: "¿Qué estrella está más cerca de la Tierra?", answers: [{ text: "El Sol", correct: true }, { text: "Sirio", correct: false }, { text: "Betelgeuse", correct: false }, { text: "Antares", correct: false }] },
-        { question: "Los pulmones forman parte del sistema…", answers: [{ text: "Respiratorio", correct: true }, { text: "Digestivo", correct: false }, { text: "Circulatorio", correct: false }, { text: "Nervioso", correct: false }] },
-        { question: "¿Qué gas es fundamental para la fotosíntesis?", answers: [{ text: "Dióxido de carbono", correct: true }, { text: "Nitrógeno", correct: false }, { text: "Ozono", correct: false }, { text: "Helio", correct: false }] },
-        { question: "¿Qué órgano bombea la sangre?", answers: [{ text: "Corazón", correct: true }, { text: "Riñón", correct: false }, { text: "Hígado", correct: false }, { text: "Estómago", correct: false }] }
-      ]
-    }
-  };
-
-  // ------------------ Utilidades de mezcla ------------------
-  function shuffleInPlace(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
-  // ------------------ DOM helpers ------------------
   const $ = (id) => document.getElementById(id);
-  const screens = [
-    'login-screen', 'signup-screen', 'main-menu',
-    'patient-name-form', 'trivia-game', 'subject-score',
-    'final-score', 'score-table-screen', 'cycle-modal'
-  ];
 
-  function showScreen(id) {
-    screens.forEach(s => {
-      const el = $(s);
-      if (!el) return;
-      if (s === id) { el.classList.remove('hidden'); }
-      else { el.classList.add('hidden'); }
-    });
-    estado.pantallaActual = id;
+  // --- NAVEGACIÓN ---
+  function showScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+    
+    const target = $(screenId);
+    if (target) {
+      target.classList.remove('hidden');
+      state.currentScreen = screenId;
+    }
+
+    if (screenId === 'paint-screen') initPaint();
+    if (screenId === 'results-screen') loadResultsTable();
+    if (screenId === 'docente-panel') loadSubjectsForCRUD();
+    if (screenId === 'subject-selection') loadSubjectsForPatient();
   }
 
-  // ------------------ Lotties: sin duplicados ------------------
-  const lotties = {};
-  const LOTTIE_JSON = {
-    login  : 'https://assets2.lottiefiles.com/packages/lf20_x62chJ.json',
-    signup : 'https://assets4.lottiefiles.com/packages/lf20_06a6pf9i.json',
-    book   : 'https://assets4.lottiefiles.com/packages/lf20_3rwasyjy.json',
-    cycle  : 'https://assets4.lottiefiles.com/private_files/lf30_yjxp5z.json',
-    rocket : 'https://assets4.lottiefiles.com/packages/lf20_rsa9yofm.json',
-    trophy : 'https://assets7.lottiefiles.com/packages/lf20_jbrw3hcz.json',
-    medal  : 'https://assets9.lottiefiles.com/packages/lf20_ydo1amjm.json'
+  window.showScreen = showScreen;
+  window.toggleModal = (id, show) => {
+    const el = $(id);
+    if(show) el.classList.remove('hidden');
+    else el.classList.add('hidden');
   };
 
-  function loadLottieOnce(id, path, loop=true) {
-    if (lotties[id]) return; // ya cargada
-    const container = $(id);
-    if (!container) return;
-    lotties[id] = lottie.loadAnimation({
-      container, renderer: 'svg', loop, autoplay: true, path
-    });
-  }
-  function destroyLotties() {
-    Object.values(lotties).forEach(anim => anim.destroy());
-    Object.keys(lotties).forEach(k => delete lotties[k]);
-  }
-  function initLotties() {
-    loadLottieOnce('login-mascot-animation',  LOTTIE_JSON.login);
-    loadLottieOnce('signup-user-animation',   LOTTIE_JSON.signup);
-    loadLottieOnce('menu-book-animation',     LOTTIE_JSON.book);
-    loadLottieOnce('cycle-animation',         LOTTIE_JSON.cycle);
-    loadLottieOnce('score-rocket-animation',  LOTTIE_JSON.rocket);
-    loadLottieOnce('trophy-animation',        LOTTIE_JSON.trophy);
-    loadLottieOnce('score-trophy-animation',  LOTTIE_JSON.medal);
-  }
-
-  // ------------------ Acceso banco preguntas ------------------
-  function preguntasDe(materia, ciclo) {
-    const key = ciclo === 'Primer Ciclo' ? 'primerCiclo' : 'segundoCiclo';
-    return bancoPreguntas[materia][key];
-  }
-
-  function obtenerSetMezclado(materia) {
-    if (estado.cachePreguntas[materia]) return estado.cachePreguntas[materia];
-    // Mezcla el orden de preguntas y el de respuestas de cada pregunta (copia segura)
-    const base = preguntasDe(materia, estado.ciclo);
-    const mezcladas = shuffleInPlace([...base]).map(q => ({
-      question: q.question,
-      answers : shuffleInPlace([...q.answers].map(a => ({ ...a })))
-    }));
-    estado.cachePreguntas[materia] = mezcladas;
-    return mezcladas;
-  }
-
-  // ------------------ Render de una pregunta ------------------
-  function setPreguntaActual() {
-    const materia = estado.materias[estado.indiceMateria];
-    const set = obtenerSetMezclado(materia);
-    const p = set[estado.indicePregunta];
-
-    $('subject-title').textContent = materia;
-    $('question-text').textContent = p.question;
-
-    const cont = $('answers-container');
-    cont.innerHTML = '';
-
-    // crear botones con feedback visual
-    p.answers.forEach((a, idx) => {
-      const btn = document.createElement('button');
-      btn.className = 'answer-btn';
-      btn.textContent = `${idx + 1}. ${a.text}`;
-      btn.dataset.correct = a.correct ? '1' : '0';
-      btn.addEventListener('click', () => handleRespuesta(a.correct, btn));
-      cont.appendChild(btn);
-    });
-
-    const progreso = Math.round(((estado.indicePregunta + 1) / set.length) * 100);
-    $('question-counter').textContent = `Pregunta ${estado.indicePregunta + 1} de ${set.length}`;
-    $('progress-fill').style.width = `${progreso}%`;
-  }
-
-  function handleRespuesta(correcta, btnClickeado) {
-    const materia = estado.materias[estado.indiceMateria];
-
-    // deshabilitar todas para evitar doble click
-    const botones = Array.from(document.querySelectorAll('#answers-container .answer-btn'));
-    botones.forEach(b => b.disabled = true);
-
-    // marcar visual
-    if (correcta) {
-      btnClickeado.classList.add('is-correct');
-      estado.puntajes[materia]++;
-    } else {
-      btnClickeado.classList.add('is-wrong');
-      // remarcar cuál era la correcta
-      const correcto = botones.find(b => b.dataset.correct === '1');
-      if (correcto) correcto.classList.add('is-correct');
-    }
-
-    // avanzar con pequeña pausa
-    setTimeout(() => {
-      const set = obtenerSetMezclado(materia);
-      if (estado.indicePregunta < set.length - 1) {
-        estado.indicePregunta++;
-        setPreguntaActual();
-      } else {
-        mostrarPuntajeMateria(materia);
-      }
-    }, 650);
-  }
-
-  function mostrarPuntajeMateria(materia) {
-    $('subject-score-title').textContent = `Puntaje en ${materia}`;
-    $('subject-score-value').textContent = `${estado.puntajes[materia]}/5`;
-    $('subject-score-message').textContent =
-      estado.puntajes[materia] >= 4 ? '¡Excelente!' :
-      estado.puntajes[materia] === 3 ? '¡Muy bien!' : '¡Sigue practicando!';
-
-    showScreen('subject-score');
-
-    $('next-subject-btn').onclick = () => {
-      if (estado.indiceMateria < estado.materias.length - 1) {
-        estado.indiceMateria++;
-        estado.indicePregunta = 0;
-        setPreguntaActual();
-        showScreen('trivia-game');
-      } else {
-        mostrarPuntajeFinal();
-      }
-    };
-  }
-
-  async function mostrarPuntajeFinal() {
-    $('final-patient-name').textContent = estado.pacienteActual;
-    $('language-score').textContent = `${estado.puntajes['Lengua']}/5`;
-    $('math-score').textContent     = `${estado.puntajes['Matemática']}/5`;
-    $('science-score').textContent  = `${estado.puntajes['Ciencias Naturales']}/5`;
-    const total = estado.puntajes['Lengua'] + estado.puntajes['Matemática'] + estado.puntajes['Ciencias Naturales'];
-    $('total-score').textContent = `${total}/15`;
-    showScreen('final-score');
-
-    // Guardar/actualizar en BD
-    const save = await window.DB.saveAttempt({
-      patientName: estado.pacienteActual,
-      cycle: estado.ciclo,
-      scores: { ...estado.puntajes }
-    });
-    if (!save.ok) console.error('Error guardando intento:', save.error);
-  }
-
-  // ------------------ Render tabla de puntajes ------------------
-  async function renderScores() {
-    const body = $('scores-table-body');
-    body.innerHTML = '';
-    const res = await window.DB.fetchAttempts();
-    if (!res.ok) {
-      console.error(res.error);
-      $('no-scores-message').classList.remove('hidden');
-      return;
-    }
-    const rows = res.data;
-    if (!rows.length) {
-      $('no-scores-message').classList.remove('hidden');
-      return;
-    }
-    $('no-scores-message').classList.add('hidden');
-
-    for (const r of rows) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${r.patientName}</td>
-        <td>${r.cycle}</td>
-        <td>${r.scores['Lengua']}/5</td>
-        <td>${r.scores['Matemática']}/5</td>
-        <td>${r.scores['Ciencias Naturales']}/5</td>
-        <td>${r.total}/15</td>
-        <td>
-          <button class="delete-row" data-id="${r.id}" title="Eliminar">
-            <i class="fas fa-trash"></i>
-          </button>
-        </td>`;
-      body.appendChild(tr);
-    }
-
-    body.querySelectorAll('.delete-row').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const id = e.currentTarget.dataset.id;
-        if (!confirm('¿Eliminar este puntaje de la base de datos?')) return;
-        const del = await window.DB.deleteAttempt(id);
-        if (!del.ok) { alert('No se pudo eliminar.'); return; }
-        await renderScores();
-      });
-    });
-  }
-
-  // ------------------ Binding de eventos (una sola vez) ------------------
-  let eventosAtados = false;
-  function bindEventos() {
-    if (eventosAtados) return;
-    eventosAtados = true;
-
-    // Login
-    $('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = $('username').value.trim();
-      const password = $('password').value.trim();
-      const r = await window.DB.signInDocente({ email, password });
-      if (!r.ok) {
-        $('login-error').classList.remove('hidden');
-        return;
-      }
-      $('login-error').classList.add('hidden');
-      estado.usuarioActual = email;
-      $('user-name').textContent = email.split('@')[0] || 'Docente';
+  // --- AUTENTICACIÓN ---
+  $('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('username').value;
+    const pass = $('password').value;
+    
+    const res = await window.DB.login(email, pass);
+    if (res.ok) {
+      state.user = res.data;
+      $('login-msg').classList.add('hidden');
       showScreen('main-menu');
-    });
+    } else {
+      $('login-msg').textContent = "Credenciales incorrectas.";
+      $('login-msg').classList.remove('hidden');
+    }
+  });
 
-    // Ir a registro
-    $('signup-link').addEventListener('click', () => showScreen('signup-screen'));
-    $('login-link').addEventListener('click', () => showScreen('login-screen'));
-
-    // Registro
-    $('signup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = $('new-email').value.trim();
-      const password = $('new-password').value.trim();
-      const username = $('new-username').value.trim();
-      const r = await window.DB.signUpDocente({ email, password, username });
-      if (!r.ok) {
-        $('signup-error').classList.remove('hidden');
-        $('signup-success').classList.add('hidden');
-        return;
-      }
-      $('signup-error').classList.add('hidden');
-      $('signup-success').classList.remove('hidden');
-    });
-
-    // Menú principal
-    $('trivia-menu-btn').addEventListener('click', () => {
-      showScreen('patient-name-form');
-    });
-    $('scores-menu-btn').addEventListener('click', async () => {
-      await renderScores();
-      showScreen('score-table-screen');
-    });
-    $('logout-btn').addEventListener('click', async () => {
-      await window.DB.signOutDocente();
-      destroyLotties();
-      initLotties();
+  $('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = $('new-email').value;
+    const pass = $('new-password').value;
+    const res = await window.DB.register(email, pass);
+    if (res.ok) {
+      alert("Cuenta creada. Por favor inicia sesión.");
       showScreen('login-screen');
-    });
+    } else {
+      alert("Error: " + res.error.message);
+    }
+  });
 
-    // Nombre paciente
-    $('patient-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = $('patient-name').value.trim();
-      if (!name) return;
-      estado.pacienteActual = name;
+  $('signup-link').onclick = () => showScreen('signup-screen');
+  $('login-link').onclick = () => showScreen('login-screen');
+  
+  $('logout-btn').onclick = async () => {
+    await window.DB.logout();
+    state.user = null;
+    showScreen('login-screen');
+  };
 
-      // opcional: registrar paciente
-      await window.DB.savePatient({ patientName: name });
-
-      // elegir ciclo
-      showScreen('cycle-modal');
-    });
-    $('back-to-menu-from-patient').addEventListener('click', () => showScreen('main-menu'));
-
-    // Selección de ciclo
-    $('primer-ciclo-btn').addEventListener('click', () => {
-      estado.ciclo = 'Primer Ciclo';
-      empezarTrivia();
-    });
-    $('segundo-ciclo-btn').addEventListener('click', () => {
-      estado.ciclo = 'Segundo Ciclo';
-      empezarTrivia();
-    });
-
-    // Botones de navegación
-    $('back-from-trivia').addEventListener('click', () => showScreen('main-menu'));
-    $('go-menu-from-trivia').addEventListener('click', () => showScreen('main-menu'));
-    $('go-menu-from-subject').addEventListener('click', () => showScreen('main-menu'));
-    $('back-to-menu-btn').addEventListener('click', () => showScreen('main-menu'));
-    $('back-from-scores').addEventListener('click', () => showScreen('main-menu'));
+  const session = await window.DB.getSession();
+  if (session) {
+    state.user = session.user;
+    showScreen('main-menu');
+  } else {
+    showScreen('login-screen');
   }
 
-  function empezarTrivia() {
-    estado.puntajes = { 'Lengua':0, 'Matemática':0, 'Ciencias Naturales':0 };
-    estado.indiceMateria = 0;
-    estado.indicePregunta = 0;
-    estado.cachePreguntas = {}; // reset de mezclas por si cambia ciclo o paciente
-    setPreguntaActual();
+  // --- SEGURIDAD: RE-AUTENTICACIÓN (NUEVO) ---
+  $('btn-docente-panel').onclick = () => {
+    if(!state.user) { showScreen('login-screen'); return; }
+    // En vez de entrar directo, pedimos contraseña
+    $('reauth-password').value = '';
+    window.toggleModal('modal-reauth', true);
+  };
+
+  $('btn-confirm-reauth').onclick = async () => {
+    const pwd = $('reauth-password').value;
+    if(!pwd) return;
+    
+    const res = await window.DB.reauthenticate(state.user.email, pwd);
+    if (res.ok) {
+        window.toggleModal('modal-reauth', false);
+        showScreen('docente-panel');
+    } else {
+        alert("Contraseña incorrecta.");
+    }
+  };
+
+  // --- MENÚ Y NAVEGACIÓN ---
+  $('btn-paciente-section').onclick = () => {
+    $('patient-name-input').value = '';
+    showScreen('patient-welcome');
+  };
+
+  $('btn-confirm-patient').onclick = () => {
+    const name = $('patient-name-input').value.trim();
+    if (!name) { alert("Por favor ingresa un nombre"); return; }
+    state.patientName = name;
+    $('display-patient-name').textContent = name;
+    showScreen('subject-selection');
+  };
+
+  async function loadSubjectsForPatient() {
+    const container = $('subjects-grid');
+    container.innerHTML = '<p class="text-center">Cargando materias...</p>';
+    const res = await window.DB.getSubjects();
+    container.innerHTML = '';
+    
+    if (res.ok && res.data.length > 0) {
+      res.data.forEach(sub => {
+        const btn = document.createElement('button');
+        btn.className = 'btn w-full py-4 text-xl font-bold shadow-md transform hover:scale-105 transition-transform mb-2';
+        btn.textContent = sub.name;
+        const hue = Math.floor(Math.random() * 360);
+        btn.style.background = `hsl(${hue}, 70%, 50%)`;
+        btn.style.color = 'white';
+        btn.onclick = () => {
+          state.selectedSubject = sub;
+          window.toggleModal('modal-cycle-patient', true);
+        };
+        container.appendChild(btn);
+      });
+    } else {
+      container.innerHTML = '<p class="text-center text-gray-500">No hay materias disponibles.</p>';
+    }
+  }
+
+  $('btn-go-paint').onclick = () => showScreen('paint-screen');
+
+  document.querySelectorAll('.cycle-select-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      state.selectedCycle = e.target.dataset.cycle;
+      window.toggleModal('modal-cycle-patient', false);
+      await startGame();
+    };
+  });
+
+  // --- TRIVIA GAME ---
+  async function startGame() {
     showScreen('trivia-game');
+    $('game-subject-title').textContent = `${state.selectedSubject.name} - ${state.selectedCycle}`;
+    $('game-question-text').textContent = "Cargando preguntas...";
+    $('game-answers-grid').innerHTML = '';
+
+    const res = await window.DB.getQuestionsForGame(state.selectedSubject.id, state.selectedCycle);
+    
+    if (!res.ok || res.data.length === 0) {
+      alert("Esta materia no tiene preguntas válidas para este ciclo aún.");
+      showScreen('subject-selection');
+      return;
+    }
+
+    state.questions = res.data.sort(() => Math.random() - 0.5);
+    state.currentQuestionIndex = 0;
+    state.score = { correct: 0, incorrect: 0 };
+    renderQuestion();
   }
 
-  // ------------------ Inicio ------------------
-  initLotties();
-  bindEventos();
-  showScreen('login-screen');
+  function renderQuestion() {
+    const q = state.questions[state.currentQuestionIndex];
+    $('game-question-text').textContent = q.question_text;
+    $('motivational-msg').textContent = state.motivationalPhrases[Math.floor(Math.random() * state.motivationalPhrases.length)];
+
+    const pct = ((state.currentQuestionIndex) / state.questions.length) * 100;
+    $('game-progress').style.width = `${pct}%`;
+
+    const grid = $('game-answers-grid');
+    grid.innerHTML = '';
+
+    const answers = [...q.answers].sort(() => Math.random() - 0.5);
+    answers.forEach(ans => {
+      const btn = document.createElement('button');
+      btn.className = 'answer-btn w-full p-4 text-left border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors';
+      btn.textContent = ans.answer_text;
+      btn.onclick = () => handleAnswer(ans.is_correct, btn);
+      grid.appendChild(btn);
+    });
+  }
+
+  function handleAnswer(isCorrect, btn) {
+    const allBtns = document.querySelectorAll('.answer-btn');
+    allBtns.forEach(b => b.disabled = true);
+    if (isCorrect) {
+      btn.classList.add('bg-green-200', 'border-green-500');
+      state.score.correct++;
+    } else {
+      btn.classList.add('bg-red-200', 'border-red-500');
+      state.score.incorrect++;
+    }
+    setTimeout(() => {
+      state.currentQuestionIndex++;
+      if (state.currentQuestionIndex < state.questions.length) {
+        renderQuestion();
+      } else {
+        finishGame();
+      }
+    }, 1500);
+  }
+
+  async function finishGame() {
+    const total = state.questions.length;
+    const finalScore = state.score.correct;
+    if (state.user) {
+        await window.DB.saveAttempt({
+            patient_name: state.patientName,
+            subject_name: state.selectedSubject.name,
+            cycle: state.selectedCycle,
+            correct_count: state.score.correct,
+            incorrect_count: state.score.incorrect,
+            score_total: finalScore,
+            created_by: state.user.id
+        });
+    }
+    $('score-subject-name').textContent = state.selectedSubject.name;
+    $('score-number').textContent = `${finalScore}/${total}`;
+    
+    let feedback = "";
+    if (finalScore === total) feedback = "¡Perfecto! ¡Eres un genio!";
+    else if (finalScore > total / 2) feedback = "¡Muy buen trabajo!";
+    else feedback = "¡Sigue practicando, tú puedes!";
+    $('score-feedback').textContent = feedback;
+    showScreen('level-score');
+  }
+
+  window.endTriviaEarly = () => {
+    if(confirm("¿Quieres salir de la trivia?")) showScreen('subject-selection');
+  };
+
+  // --- CRUD GESTOR (MATERIAS Y PREGUNTAS) ---
+  $('btn-add-subject-modal').onclick = () => {
+    loadSubjectsForCRUD();
+    window.toggleModal('modal-crud', true);
+    $('selected-subject-questions').classList.add('hidden'); // Ocultar panel preguntas
+    switchToTab('tab-materia');
+  };
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = (e) => switchToTab(e.target.dataset.tab);
+  });
+
+  function switchToTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.remove('active', 'border-primary', 'text-primary');
+      b.classList.add('text-gray-500');
+    });
+    const activeBtn = document.querySelector(`[data-tab="${tabId}"]`);
+    if(activeBtn) {
+        activeBtn.classList.add('active', 'border-primary', 'text-primary');
+        activeBtn.classList.remove('text-gray-500');
+    }
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    $(tabId).classList.remove('hidden');
+  }
+
+  // Crear Materia
+  $('btn-save-subject').onclick = async () => {
+    const name = $('input-subject-name').value.trim();
+    if (!name) return;
+    const res = await window.DB.createSubject(name);
+    if (res.ok) {
+      alert("Materia creada");
+      $('input-subject-name').value = '';
+      loadSubjectsForCRUD();
+    } else {
+      alert("Error al crear materia");
+    }
+  };
+
+  // Cargar lista con opciones de Borrar y Expandir
+  async function loadSubjectsForCRUD() {
+    const res = await window.DB.getSubjects();
+    const list = $('subjects-list-crud');
+    const select = $('select-subject-crud');
+    
+    list.innerHTML = '';
+    select.innerHTML = '';
+
+    if (res.ok) {
+      res.data.forEach(sub => {
+        // Opción en Select
+        const opt = document.createElement('option');
+        opt.value = sub.id;
+        opt.textContent = sub.name;
+        select.appendChild(opt);
+
+        // Item en Lista
+        const div = document.createElement('div');
+        div.className = 'p-3 border rounded bg-white flex justify-between items-center hover:bg-gray-50 cursor-pointer transition-colors';
+        
+        // Al hacer click en el texto, carga preguntas
+        const info = document.createElement('div');
+        info.className = 'flex-1';
+        info.innerHTML = `<span class="font-bold">${sub.name}</span> <span class="text-xs text-gray-400 ml-2">${sub.is_public ? '(NAP)' : '(Propia)'}</span>`;
+        // *** USO CORRECTO DE LA FUNCIÓN ***
+        info.onclick = () => loadQuestionsForManager(sub);
+
+        const actions = document.createElement('div');
+        
+        // Botón Borrar (Solo si no es pública)
+        if (!sub.is_public) {
+            const btnDelete = document.createElement('button');
+            btnDelete.innerHTML = '<i class="fas fa-trash text-red-500 hover:text-red-700"></i>';
+            btnDelete.className = 'ml-3 p-1';
+            btnDelete.title = "Eliminar materia";
+            btnDelete.onclick = (e) => {
+                e.stopPropagation(); // Evitar que se abra la lista de preguntas
+                deleteSubject(sub.id, sub.name);
+            };
+            actions.appendChild(btnDelete);
+        } else {
+            actions.innerHTML = '<i class="fas fa-lock text-gray-300 ml-3" title="No editable"></i>';
+        }
+
+        div.appendChild(info);
+        div.appendChild(actions);
+        list.appendChild(div);
+      });
+    }
+  }
+
+  async function deleteSubject(id, name) {
+    if (!confirm(`¿Estás seguro de ELIMINAR la materia "${name}" y todas sus preguntas?`)) return;
+    const res = await window.DB.deleteSubject(id);
+    if (res.ok) {
+        loadSubjectsForCRUD();
+        $('selected-subject-questions').classList.add('hidden');
+    } else {
+        alert("Error al eliminar.");
+    }
+  }
+
+  // Cargar preguntas para editar
+  async function loadQuestionsForManager(subject) {
+    $('selected-subject-questions').classList.remove('hidden');
+    $('lbl-selected-subject').textContent = subject.name;
+    const container = $('questions-list-container');
+    container.innerHTML = '<p class="text-xs text-center p-2">Cargando...</p>';
+
+    // *** AQUÍ ESTABA EL PROBLEMA, AHORA CORREGIDO ***
+    const res = await window.DB.getAllQuestionsForSubject(subject.id);
+    container.innerHTML = '';
+
+    if (res.ok && res.data.length > 0) {
+        res.data.forEach(q => {
+            const div = document.createElement('div');
+            div.className = 'bg-white border rounded p-2 text-sm flex justify-between items-start';
+            div.innerHTML = `
+                <div><span class="font-bold text-gray-700">[${q.cycle}]</span> ${q.question_text}</div>
+            `;
+            
+            const btns = document.createElement('div');
+            btns.className = 'flex gap-2 ml-2 shrink-0';
+            
+            // Botón Editar
+            const btnEdit = document.createElement('button');
+            btnEdit.innerHTML = '<i class="fas fa-pen text-blue-500"></i>';
+            btnEdit.onclick = () => startEditQuestion(subject.id, q);
+
+            // Botón Borrar
+            const btnDel = document.createElement('button');
+            btnDel.innerHTML = '<i class="fas fa-trash text-red-500"></i>';
+            btnDel.onclick = async () => {
+                if(confirm("¿Borrar esta pregunta?")) {
+                    await window.DB.deleteQuestion(q.id);
+                    loadQuestionsForManager(subject); // Recargar lista
+                }
+            };
+            btns.appendChild(btnEdit);
+            btns.appendChild(btnDel);
+            div.appendChild(btns);
+            container.appendChild(div);
+        });
+    } else {
+        container.innerHTML = '<p class="text-xs text-gray-500 p-2 text-center">No hay preguntas.</p>';
+    }
+  }
+
+  // Editar Pregunta
+  function startEditQuestion(subjectId, questionData) {
+    switchToTab('tab-pregunta');
+    
+    state.editingQuestionId = questionData.id;
+    $('form-question-title').textContent = "Editar Pregunta";
+    $('btn-tab-pregunta').textContent = "Editando...";
+    $('btn-cancel-edit').classList.remove('hidden');
+    $('btn-save-question').textContent = "Actualizar Pregunta";
+
+    $('select-subject-crud').value = subjectId;
+    $('select-subject-crud').disabled = true; // Bloquear materia al editar
+    $('select-cycle-crud').value = questionData.cycle;
+    $('input-question-text').value = questionData.question_text;
+
+    const inputs = document.querySelectorAll('.input-answer');
+    inputs.forEach(i => i.value = '');
+    
+    const correct = questionData.answers.find(a => a.is_correct);
+    const incorrects = questionData.answers.filter(a => !a.is_correct);
+
+    if(correct) inputs[0].value = correct.answer_text;
+    if(incorrects[0]) inputs[1].value = incorrects[0].answer_text;
+    if(incorrects[1]) inputs[2].value = incorrects[1].answer_text;
+    if(incorrects[2]) inputs[3].value = incorrects[2].answer_text;
+  }
+
+  function resetQuestionForm() {
+    state.editingQuestionId = null;
+    $('form-question-title').textContent = "Nueva Pregunta";
+    $('btn-tab-pregunta').textContent = "Nueva Pregunta";
+    $('btn-cancel-edit').classList.add('hidden');
+    $('btn-save-question').textContent = "Guardar Pregunta";
+    $('select-subject-crud').disabled = false;
+    $('input-question-text').value = '';
+    document.querySelectorAll('.input-answer').forEach(i => i.value = '');
+  }
+
+  $('btn-cancel-edit').onclick = () => {
+    resetQuestionForm();
+    switchToTab('tab-materia');
+  };
+
+  $('btn-save-question').onclick = async () => {
+    const subjectId = $('select-subject-crud').value;
+    const cycle = $('select-cycle-crud').value;
+    const qText = $('input-question-text').value.trim();
+    
+    const ansInputs = document.querySelectorAll('.input-answer');
+    const answers = [];
+    let hasEmpty = false;
+    ansInputs.forEach(inp => {
+        const val = inp.value.trim();
+        if(!val) hasEmpty = true;
+        answers.push({ text: val, isCorrect: inp.dataset.correct === 'true' });
+    });
+
+    if (!qText || hasEmpty) {
+        alert("Completa todos los campos.");
+        return;
+    }
+
+    let res;
+    if (state.editingQuestionId) {
+        // ACTUALIZAR
+        res = await window.DB.updateQuestion(state.editingQuestionId, qText, cycle, answers);
+    } else {
+        // CREAR NUEVA
+        res = await window.DB.createQuestion(subjectId, cycle, qText, answers);
+    }
+
+    if (res.ok) {
+        alert(state.editingQuestionId ? "Actualizado correctamente" : "Pregunta guardada");
+        resetQuestionForm();
+        switchToTab('tab-materia');
+        // Recargar lista si está abierta
+        const subName = $('lbl-selected-subject').textContent;
+        if(subName !== "Materia") {
+             window.DB.getSubjects().then(r => {
+                 const sub = r.data.find(s => s.id === subjectId);
+                 if(sub) loadQuestionsForManager(sub);
+             });
+        }
+    } else {
+        alert("Error al guardar.");
+    }
+  };
+
+  // --- RESULTADOS Y EXPORTACIÓN ---
+  $('btn-view-results').onclick = () => showScreen('results-screen');
+  async function loadResultsTable() {
+    const tbody = $('results-table-body');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Cargando...</td></tr>';
+    const res = await window.DB.getAttempts();
+    tbody.innerHTML = '';
+    if (res.ok && res.data.length > 0) {
+      $('no-data-msg').classList.add('hidden');
+      res.data.forEach(r => {
+        const row = document.createElement('tr');
+        row.className = 'border-b hover:bg-gray-50';
+        row.innerHTML = `
+          <td class="p-3 font-bold">${r.patient_name}</td>
+          <td class="p-3">${r.subject_name}</td>
+          <td class="p-3">${r.cycle}</td>
+          <td class="p-3 text-blue-600 font-bold">${r.correct_count} / ${r.correct_count + r.incorrect_count}</td>
+          <td class="p-3 text-gray-500 text-xs">${new Date(r.created_at).toLocaleDateString()}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    } else {
+      $('no-data-msg').classList.remove('hidden');
+    }
+  }
+
+  $('btn-export-csv').onclick = () => {
+    const rows = Array.from(document.querySelectorAll('#results-table-body tr'));
+    if (rows.length === 0) { alert("No hay datos para exportar"); return; }
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Paciente,Materia,Ciclo,Puntaje,Fecha\r\n";
+    rows.forEach(row => {
+        const cols = row.querySelectorAll('td');
+        const rowData = Array.from(cols).map(c => c.innerText).join(",");
+        csvContent += rowData + "\r\n";
+    });
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "resultados_trivia.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // --- ZONA RECREATIVA (PAINT) ---
+  let canvas, ctx, isDrawing = false;
+  let currentColor = '#000000';
+
+  function initPaint() {
+    canvas = $('drawing-board');
+    ctx = canvas.getContext('2d');
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = currentColor;
+    canvas.onmousedown = startDraw;
+    canvas.onmousemove = draw;
+    canvas.onmouseup = stopDraw;
+    canvas.onmouseleave = stopDraw;
+    canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
+    canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
+    canvas.ontouchend = stopDraw;
+  }
+  function startDraw(e) {
+    isDrawing = true;
+    ctx.beginPath();
+    const rect = canvas.getBoundingClientRect();
+    ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  }
+  function draw(e) {
+    if (!isDrawing) return;
+    const rect = canvas.getBoundingClientRect();
+    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+    ctx.stroke();
+  }
+  function stopDraw() {
+    isDrawing = false;
+    ctx.closePath();
+  }
+  document.querySelectorAll('.color-btn').forEach(btn => {
+    btn.onclick = (e) => {
+        currentColor = e.target.dataset.color;
+        if(ctx) ctx.strokeStyle = currentColor;
+        document.querySelectorAll('.color-btn').forEach(b => b.style.transform = 'scale(1)');
+        e.target.style.transform = 'scale(1.2)';
+    };
+  });
+  $('btn-clear-canvas').onclick = () => {
+    if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
 });
