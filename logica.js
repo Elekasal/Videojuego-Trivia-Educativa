@@ -2,15 +2,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   // --- ESTADO GLOBAL ---
   const state = {
-    user: null,
+    user: null, // Docente logueado
     currentScreen: 'login-screen',
-    patientName: '',
+    patient: null, // Alumno actual { id, name, dni }
     selectedSubject: null, 
     selectedCycle: null,
     questions: [],
     currentQuestionIndex: 0,
     score: { correct: 0, incorrect: 0 },
-    editingQuestionId: null, // Para saber si editamos o creamos
+    editingQuestionId: null, // ID para edición
     motivationalPhrases: [
       "¡Tú puedes!", "¡Sigue así!", "¡Lo estás haciendo genial!", 
       "¡No te rindas!", "¡Eres muy inteligente!", "¡Casi lo tienes!"
@@ -19,8 +19,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const $ = (id) => document.getElementById(id);
 
-  // --- NAVEGACIÓN ---
+  // --- NAVEGACIÓN Y PANTALLAS ---
   function showScreen(screenId) {
+    // Ocultar todas las pantallas y modales
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
     document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
     
@@ -30,8 +31,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       state.currentScreen = screenId;
     }
 
+    // Inicializar lógica específica de cada pantalla
     if (screenId === 'paint-screen') initPaint();
-    if (screenId === 'results-screen') loadResultsTable();
+    if (screenId === 'results-screen') loadPatientsTable(); // Cargar lista de alumnos
     if (screenId === 'docente-panel') loadSubjectsForCRUD();
     if (screenId === 'subject-selection') loadSubjectsForPatient();
   }
@@ -43,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else el.classList.add('hidden');
   };
 
-  // --- AUTENTICACIÓN ---
+  // --- AUTENTICACIÓN (DOCENTE) ---
   $('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = $('username').value;
@@ -62,9 +64,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('signup-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const email = $('new-email').value;
-    const pass = $('new-password').value;
-    const res = await window.DB.register(email, pass);
+    const res = await window.DB.register($('new-email').value, $('new-password').value);
     if (res.ok) {
       alert("Cuenta creada. Por favor inicia sesión.");
       showScreen('login-screen');
@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     showScreen('login-screen');
   };
 
+  // Verificar sesión al cargar
   const session = await window.DB.getSession();
   if (session) {
     state.user = session.user;
@@ -90,10 +91,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     showScreen('login-screen');
   }
 
-  // --- SEGURIDAD: RE-AUTENTICACIÓN (NUEVO) ---
+  // --- SEGURIDAD: RE-AUTENTICACIÓN ---
   $('btn-docente-panel').onclick = () => {
     if(!state.user) { showScreen('login-screen'); return; }
-    // En vez de entrar directo, pedimos contraseña
+    // Limpiar y mostrar modal de contraseña
     $('reauth-password').value = '';
     window.toggleModal('modal-reauth', true);
   };
@@ -111,23 +112,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // --- MENÚ Y NAVEGACIÓN ---
+  // --- NAVEGACIÓN MENÚ ---
   $('btn-paciente-section').onclick = () => {
     $('patient-name-input').value = '';
+    $('patient-dni-input').value = '';
     showScreen('patient-welcome');
   };
 
-  $('btn-confirm-patient').onclick = () => {
+  // --- FLUJO PACIENTE (REGISTRO POR DNI) ---
+  $('btn-confirm-patient').onclick = async () => {
     const name = $('patient-name-input').value.trim();
-    if (!name) { alert("Por favor ingresa un nombre"); return; }
-    state.patientName = name;
-    $('display-patient-name').textContent = name;
-    showScreen('subject-selection');
+    const dni = $('patient-dni-input').value.trim();
+    
+    if (!name || !dni) { alert("Por favor ingresa un nombre y DNI"); return; }
+    
+    // Validar que el docente haya iniciado sesión antes (para asociar el alumno)
+    if (!state.user) { alert("El docente debe iniciar sesión primero."); return; }
+
+    // Registrar o recuperar alumno existente
+    const res = await window.DB.registerOrGetPatient(name, dni);
+    
+    if(res.ok) {
+        // Guardamos los datos del alumno en el estado
+        state.patient = { 
+            id: res.data.id_paciente || res.data.id, // ID único de la DB
+            name: res.data.nombre, 
+            dni: res.data.dni 
+        };
+        $('display-patient-name').textContent = name;
+        showScreen('subject-selection');
+    } else {
+        alert("Error al ingresar: " + (res.error.message || "Intente nuevamente"));
+    }
   };
 
   async function loadSubjectsForPatient() {
     const container = $('subjects-grid');
     container.innerHTML = '<p class="text-center">Cargando materias...</p>';
+    
     const res = await window.DB.getSubjects();
     container.innerHTML = '';
     
@@ -136,9 +158,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const btn = document.createElement('button');
         btn.className = 'btn w-full py-4 text-xl font-bold shadow-md transform hover:scale-105 transition-transform mb-2';
         btn.textContent = sub.name;
+        // Color aleatorio para hacerlo lúdico
         const hue = Math.floor(Math.random() * 360);
         btn.style.background = `hsl(${hue}, 70%, 50%)`;
         btn.style.color = 'white';
+        
         btn.onclick = () => {
           state.selectedSubject = sub;
           window.toggleModal('modal-cycle-patient', true);
@@ -152,15 +176,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   $('btn-go-paint').onclick = () => showScreen('paint-screen');
 
+  // Selección de Ciclo
   document.querySelectorAll('.cycle-select-btn').forEach(btn => {
     btn.onclick = async (e) => {
-      state.selectedCycle = e.target.dataset.cycle;
+      state.selectedCycle = e.target.dataset.cycle; // 'Primer Ciclo' o 'Segundo Ciclo'
       window.toggleModal('modal-cycle-patient', false);
       await startGame();
     };
   });
 
-  // --- TRIVIA GAME ---
+  // --- MOTOR DE JUEGO (TRIVIA) ---
   async function startGame() {
     showScreen('trivia-game');
     $('game-subject-title').textContent = `${state.selectedSubject.name} - ${state.selectedCycle}`;
@@ -175,6 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // Mezclar preguntas aleatoriamente
     state.questions = res.data.sort(() => Math.random() - 0.5);
     state.currentQuestionIndex = 0;
     state.score = { correct: 0, incorrect: 0 };
@@ -184,15 +210,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderQuestion() {
     const q = state.questions[state.currentQuestionIndex];
     $('game-question-text').textContent = q.question_text;
+    
+    // Frase motivacional aleatoria
     $('motivational-msg').textContent = state.motivationalPhrases[Math.floor(Math.random() * state.motivationalPhrases.length)];
 
+    // Actualizar barra de progreso
     const pct = ((state.currentQuestionIndex) / state.questions.length) * 100;
     $('game-progress').style.width = `${pct}%`;
 
     const grid = $('game-answers-grid');
     grid.innerHTML = '';
 
+    // Mezclar respuestas
     const answers = [...q.answers].sort(() => Math.random() - 0.5);
+    
     answers.forEach(ans => {
       const btn = document.createElement('button');
       btn.className = 'answer-btn w-full p-4 text-left border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors';
@@ -203,8 +234,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function handleAnswer(isCorrect, btn) {
+    // Bloquear botones para evitar doble click
     const allBtns = document.querySelectorAll('.answer-btn');
     allBtns.forEach(b => b.disabled = true);
+    
     if (isCorrect) {
       btn.classList.add('bg-green-200', 'border-green-500');
       state.score.correct++;
@@ -212,6 +245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       btn.classList.add('bg-red-200', 'border-red-500');
       state.score.incorrect++;
     }
+    
+    // Esperar un momento antes de pasar a la siguiente
     setTimeout(() => {
       state.currentQuestionIndex++;
       if (state.currentQuestionIndex < state.questions.length) {
@@ -225,9 +260,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function finishGame() {
     const total = state.questions.length;
     const finalScore = state.score.correct;
-    if (state.user) {
+    
+    // GUARDAR INTENTO EN BD (Vinculado al ID del alumno)
+    if (state.user && state.patient) {
         await window.DB.saveAttempt({
-            patient_name: state.patientName,
+            patientId: state.patient.id, // ID real de la tabla pacientes
             subject_name: state.selectedSubject.name,
             cycle: state.selectedCycle,
             correct_count: state.score.correct,
@@ -236,6 +273,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             created_by: state.user.id
         });
     }
+    
     $('score-subject-name').textContent = state.selectedSubject.name;
     $('score-number').textContent = `${finalScore}/${total}`;
     
@@ -244,6 +282,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if (finalScore > total / 2) feedback = "¡Muy buen trabajo!";
     else feedback = "¡Sigue practicando, tú puedes!";
     $('score-feedback').textContent = feedback;
+    
     showScreen('level-score');
   }
 
@@ -251,14 +290,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if(confirm("¿Quieres salir de la trivia?")) showScreen('subject-selection');
   };
 
-  // --- CRUD GESTOR (MATERIAS Y PREGUNTAS) ---
+  // --- CRUD GESTOR (DOCENTE) ---
   $('btn-add-subject-modal').onclick = () => {
     loadSubjectsForCRUD();
     window.toggleModal('modal-crud', true);
-    $('selected-subject-questions').classList.add('hidden'); // Ocultar panel preguntas
+    $('selected-subject-questions').classList.add('hidden'); // Resetear vista
     switchToTab('tab-materia');
   };
 
+  // Cambio de pestañas
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.onclick = (e) => switchToTab(e.target.dataset.tab);
   });
@@ -277,7 +317,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $(tabId).classList.remove('hidden');
   }
 
-  // Crear Materia
+  // Guardar Materia Nueva
   $('btn-save-subject').onclick = async () => {
     const name = $('input-subject-name').value.trim();
     if (!name) return;
@@ -291,7 +331,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // Cargar lista con opciones de Borrar y Expandir
+  // Cargar lista de materias para el gestor
   async function loadSubjectsForCRUD() {
     const res = await window.DB.getSubjects();
     const list = $('subjects-list-crud');
@@ -302,38 +342,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (res.ok) {
       res.data.forEach(sub => {
-        // Opción en Select
+        // Llenar select de creación de preguntas
         const opt = document.createElement('option');
         opt.value = sub.id;
         opt.textContent = sub.name;
         select.appendChild(opt);
 
-        // Item en Lista
+        // Llenar lista visual
         const div = document.createElement('div');
         div.className = 'p-3 border rounded bg-white flex justify-between items-center hover:bg-gray-50 cursor-pointer transition-colors';
         
-        // Al hacer click en el texto, carga preguntas
         const info = document.createElement('div');
         info.className = 'flex-1';
         info.innerHTML = `<span class="font-bold">${sub.name}</span> <span class="text-xs text-gray-400 ml-2">${sub.is_public ? '(NAP)' : '(Propia)'}</span>`;
-        // *** USO CORRECTO DE LA FUNCIÓN ***
+        // Al hacer click, cargamos las preguntas de esta materia
         info.onclick = () => loadQuestionsForManager(sub);
 
         const actions = document.createElement('div');
         
-        // Botón Borrar (Solo si no es pública)
+        // Botón Eliminar (Solo si no es pública)
         if (!sub.is_public) {
             const btnDelete = document.createElement('button');
             btnDelete.innerHTML = '<i class="fas fa-trash text-red-500 hover:text-red-700"></i>';
             btnDelete.className = 'ml-3 p-1';
             btnDelete.title = "Eliminar materia";
             btnDelete.onclick = (e) => {
-                e.stopPropagation(); // Evitar que se abra la lista de preguntas
+                e.stopPropagation();
                 deleteSubject(sub.id, sub.name);
             };
             actions.appendChild(btnDelete);
         } else {
-            actions.innerHTML = '<i class="fas fa-lock text-gray-300 ml-3" title="No editable"></i>';
+            actions.innerHTML = '<i class="fas fa-lock text-gray-300 ml-3" title="Materia Base (No editable)"></i>';
         }
 
         div.appendChild(info);
@@ -354,14 +393,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Cargar preguntas para editar
+  // Cargar preguntas de una materia para editar
   async function loadQuestionsForManager(subject) {
     $('selected-subject-questions').classList.remove('hidden');
     $('lbl-selected-subject').textContent = subject.name;
     const container = $('questions-list-container');
     container.innerHTML = '<p class="text-xs text-center p-2">Cargando...</p>';
 
-    // *** AQUÍ ESTABA EL PROBLEMA, AHORA CORREGIDO ***
     const res = await window.DB.getAllQuestionsForSubject(subject.id);
     container.innerHTML = '';
 
@@ -376,12 +414,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btns = document.createElement('div');
             btns.className = 'flex gap-2 ml-2 shrink-0';
             
-            // Botón Editar
+            // Botón Editar Pregunta
             const btnEdit = document.createElement('button');
             btnEdit.innerHTML = '<i class="fas fa-pen text-blue-500"></i>';
             btnEdit.onclick = () => startEditQuestion(subject.id, q);
 
-            // Botón Borrar
+            // Botón Borrar Pregunta
             const btnDel = document.createElement('button');
             btnDel.innerHTML = '<i class="fas fa-trash text-red-500"></i>';
             btnDel.onclick = async () => {
@@ -396,11 +434,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             container.appendChild(div);
         });
     } else {
-        container.innerHTML = '<p class="text-xs text-gray-500 p-2 text-center">No hay preguntas.</p>';
+        container.innerHTML = '<p class="text-xs text-gray-500 p-2 text-center">No hay preguntas registradas.</p>';
     }
   }
 
-  // Editar Pregunta
+  // Preparar formulario para edición
   function startEditQuestion(subjectId, questionData) {
     switchToTab('tab-pregunta');
     
@@ -411,7 +449,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     $('btn-save-question').textContent = "Actualizar Pregunta";
 
     $('select-subject-crud').value = subjectId;
-    $('select-subject-crud').disabled = true; // Bloquear materia al editar
+    $('select-subject-crud').disabled = true; // Bloquear cambio de materia
     $('select-cycle-crud').value = questionData.cycle;
     $('input-question-text').value = questionData.question_text;
 
@@ -443,6 +481,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     switchToTab('tab-materia');
   };
 
+  // Guardar o Actualizar Pregunta
   $('btn-save-question').onclick = async () => {
     const subjectId = $('select-subject-crud').value;
     const cycle = $('select-cycle-crud').value;
@@ -451,6 +490,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ansInputs = document.querySelectorAll('.input-answer');
     const answers = [];
     let hasEmpty = false;
+    
+    // La primera siempre es la correcta por diseño en el form
     ansInputs.forEach(inp => {
         const val = inp.value.trim();
         if(!val) hasEmpty = true;
@@ -458,16 +499,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     if (!qText || hasEmpty) {
-        alert("Completa todos los campos.");
+        alert("Por favor completa la pregunta y todas las respuestas.");
         return;
     }
 
     let res;
     if (state.editingQuestionId) {
-        // ACTUALIZAR
+        // MODO EDICIÓN
         res = await window.DB.updateQuestion(state.editingQuestionId, qText, cycle, answers);
     } else {
-        // CREAR NUEVA
+        // MODO CREACIÓN
         res = await window.DB.createQuestion(subjectId, cycle, qText, answers);
     }
 
@@ -475,7 +516,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert(state.editingQuestionId ? "Actualizado correctamente" : "Pregunta guardada");
         resetQuestionForm();
         switchToTab('tab-materia');
-        // Recargar lista si está abierta
+        
+        // Si estábamos editando, recargar la lista para ver cambios
         const subName = $('lbl-selected-subject').textContent;
         if(subName !== "Materia") {
              window.DB.getSubjects().then(r => {
@@ -488,25 +530,34 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // --- RESULTADOS Y EXPORTACIÓN ---
+  // --- RESULTADOS Y LISTADO DE ALUMNOS ---
   $('btn-view-results').onclick = () => showScreen('results-screen');
-  async function loadResultsTable() {
+  
+  // Carga lista de pacientes ÚNICOS
+  async function loadPatientsTable() {
     const tbody = $('results-table-body');
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Cargando...</td></tr>';
-    const res = await window.DB.getAttempts();
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Cargando alumnos...</td></tr>';
+    
+    const res = await window.DB.getPatientsList();
     tbody.innerHTML = '';
+    
     if (res.ok && res.data.length > 0) {
       $('no-data-msg').classList.add('hidden');
-      res.data.forEach(r => {
+      res.data.forEach(p => {
         const row = document.createElement('tr');
-        row.className = 'border-b hover:bg-gray-50';
+        row.className = 'border-b hover:bg-gray-50 cursor-pointer';
         row.innerHTML = `
-          <td class="p-3 font-bold">${r.patient_name}</td>
-          <td class="p-3">${r.subject_name}</td>
-          <td class="p-3">${r.cycle}</td>
-          <td class="p-3 text-blue-600 font-bold">${r.correct_count} / ${r.correct_count + r.incorrect_count}</td>
-          <td class="p-3 text-gray-500 text-xs">${new Date(r.created_at).toLocaleDateString()}</td>
+          <td class="p-3 font-bold text-left">${p.name}</td>
+          <td class="p-3 text-left">${p.dni}</td>
+          <td class="p-3 font-bold text-center">${p.attempts_count}</td>
+          <td class="p-3 text-center">
+             <button class="text-blue-500 hover:text-blue-700 font-medium hover:underline text-sm px-3 py-1 rounded border border-blue-200 hover:bg-blue-50 transition">
+               Ver Historial
+             </button>
+          </td>
         `;
+        // Click en la fila abre el modal de historial
+        row.onclick = () => showPatientHistory(p);
         tbody.appendChild(row);
       });
     } else {
@@ -514,20 +565,53 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  // Mostrar historial detallado de un alumno
+  async function showPatientHistory(patient) {
+      $('history-patient-name').textContent = patient.name;
+      $('history-patient-dni').textContent = patient.dni;
+      const tbody = $('history-table-body');
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center p-2">Cargando...</td></tr>';
+      
+      window.toggleModal('modal-history', true);
+      
+      const res = await window.DB.getPatientHistory(patient.id);
+      tbody.innerHTML = '';
+      
+      if(res.ok && res.data.length > 0) {
+          res.data.forEach(h => {
+              const tr = document.createElement('tr');
+              tr.className = 'border-b';
+              tr.innerHTML = `
+                <td class="p-2 text-left text-xs">${new Date(h.date).toLocaleDateString()}</td>
+                <td class="p-2 text-left">${h.subject}</td>
+                <td class="p-2 text-left text-xs">${h.cycle}</td>
+                <td class="p-2 text-center font-bold text-blue-600">${h.score}</td>
+              `;
+              tbody.appendChild(tr);
+          });
+      } else {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center p-2 text-gray-500">Sin actividad registrada.</td></tr>';
+      }
+  }
+
   $('btn-export-csv').onclick = () => {
     const rows = Array.from(document.querySelectorAll('#results-table-body tr'));
     if (rows.length === 0) { alert("No hay datos para exportar"); return; }
+    
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Paciente,Materia,Ciclo,Puntaje,Fecha\r\n";
+    csvContent += "Alumno,DNI,Total Intentos\r\n";
+    
     rows.forEach(row => {
         const cols = row.querySelectorAll('td');
-        const rowData = Array.from(cols).map(c => c.innerText).join(",");
+        // Tomamos solo las primeras 3 columnas (Nombre, DNI, Intentos)
+        const rowData = Array.from(cols).slice(0, 3).map(c => c.innerText).join(",");
         csvContent += rowData + "\r\n";
     });
+    
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "resultados_trivia.csv");
+    link.setAttribute("download", "listado_alumnos.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -540,46 +624,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   function initPaint() {
     canvas = $('drawing-board');
     ctx = canvas.getContext('2d');
+    
+    // Ajustar al tamaño real del contenedor
     const rect = canvas.parentElement.getBoundingClientRect();
     canvas.width = rect.width;
     canvas.height = rect.height;
+    
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.lineWidth = 5;
     ctx.strokeStyle = currentColor;
+
+    // Eventos Mouse
     canvas.onmousedown = startDraw;
     canvas.onmousemove = draw;
     canvas.onmouseup = stopDraw;
     canvas.onmouseleave = stopDraw;
+    
+    // Eventos Touch (Tablets)
     canvas.ontouchstart = (e) => { e.preventDefault(); startDraw(e.touches[0]); };
     canvas.ontouchmove = (e) => { e.preventDefault(); draw(e.touches[0]); };
     canvas.ontouchend = stopDraw;
   }
+
   function startDraw(e) {
     isDrawing = true;
     ctx.beginPath();
     const rect = canvas.getBoundingClientRect();
     ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
   }
+
   function draw(e) {
     if (!isDrawing) return;
     const rect = canvas.getBoundingClientRect();
     ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
     ctx.stroke();
   }
+
   function stopDraw() {
     isDrawing = false;
     ctx.closePath();
   }
+
   document.querySelectorAll('.color-btn').forEach(btn => {
     btn.onclick = (e) => {
         currentColor = e.target.dataset.color;
         if(ctx) ctx.strokeStyle = currentColor;
+        
+        // Feedback visual de selección
         document.querySelectorAll('.color-btn').forEach(b => b.style.transform = 'scale(1)');
         e.target.style.transform = 'scale(1.2)';
     };
   });
+
   $('btn-clear-canvas').onclick = () => {
     if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
+
 });

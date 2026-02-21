@@ -101,16 +101,16 @@
         </div>
         <!-- Tarjeta Resultados -->
         <div class="bg-white p-4 rounded-xl shadow-md">
-          <h3 class="font-bold mb-2 text-secondary">Resultados y Exportación</h3>
-          <p class="text-sm text-gray-500 mb-3">Ver puntajes de pacientes y exportar.</p>
-          <button id="btn-view-results" class="btn w-full text-sm" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Ver Tabla</button>
+          <h3 class="font-bold mb-2 text-secondary">Resultados y Pacientes</h3>
+          <p class="text-sm text-gray-500 mb-3">Ver lista de alumnos y sus progresos.</p>
+          <button id="btn-view-results" class="btn w-full text-sm" style="background: linear-gradient(to right, var(--secondary), var(--accent));">Ver Alumnos</button>
         </div>
       </div>
       
       <button class="btn-back mx-auto block text-gray-500" onclick="showScreen('main-menu')">Volver al Menú</button>
     </div>
 
-    <!-- MODAL GESTOR DE CONTENIDO -->
+    <!-- MODAL GESTOR DE CONTENIDO (CRUD) -->
     <div id="modal-crud" class="modal hidden">
       <div class="modal-content relative max-h-screen overflow-y-auto" style="width: 95%; max-width: 600px;">
         <button class="absolute top-2 right-2 text-gray-500 text-xl" onclick="toggleModal('modal-crud', false)">&times;</button>
@@ -188,24 +188,33 @@
       </div>
     </div>
 
-    <!-- SECCIÓN PACIENTE -->
+    <!-- SECCIÓN PACIENTE: BIENVENIDA (AHORA CON DNI) -->
     <div id="patient-welcome" class="screen hidden fade-in">
       <h1 class="text-3xl font-bold text-center text-primary mb-6">¡Bienvenido Alumno!</h1>
       <div class="max-w-sm mx-auto">
         <label class="block mb-2 font-bold">¿Cuál es tu nombre?</label>
-        <input type="text" id="patient-name-input" class="w-full px-4 py-3 border rounded-lg text-lg mb-4" placeholder="Tu nombre aquí">
-        <button id="btn-confirm-patient" class="btn w-full text-white py-3 rounded-md font-bold text-lg">CONFIRMAR</button>
+        <input type="text" id="patient-name-input" class="w-full px-4 py-3 border rounded-lg text-lg mb-4" placeholder="Ej: Juan Perez">
+        
+        <label class="block mb-2 font-bold">Ingresa tu DNI (Sin puntos)</label>
+        <input type="number" id="patient-dni-input" class="w-full px-4 py-3 border rounded-lg text-lg mb-4" placeholder="Ej: 12345678">
+        
+        <button id="btn-confirm-patient" class="btn w-full text-white py-3 rounded-md font-bold text-lg">INGRESAR</button>
         <button class="btn-back w-full mt-4" onclick="showScreen('main-menu')">Volver (Solo Docentes)</button>
       </div>
     </div>
 
+    <!-- SECCIÓN PACIENTE: SELECCIÓN MATERIA -->
     <div id="subject-selection" class="screen hidden fade-in">
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold">¡Hola <span id="display-patient-name" class="text-secondary"></span>!</h2>
         <button onclick="showScreen('patient-welcome')" class="text-sm text-gray-500"><i class="fas fa-sign-out-alt"></i> Salir</button>
       </div>
       <p class="text-center mb-4">¿Qué te gustaría aprender hoy?</p>
-      <div id="subjects-grid" class="grid grid-cols-1 gap-4 max-w-md mx-auto mb-6"></div>
+      
+      <div id="subjects-grid" class="grid grid-cols-1 gap-4 max-w-md mx-auto mb-6">
+        <!-- Se llenan dinámicamente con JS -->
+      </div>
+
       <button id="btn-go-paint" class="btn w-full py-3 font-bold mb-2" style="background: linear-gradient(to right, #f97316, #fb923c);">
         <i class="fas fa-palette mr-2"></i> Zona Recreativa
       </button>
@@ -230,36 +239,46 @@
         <h2 id="game-subject-title" class="font-bold text-xl text-primary">Materia</h2>
         <span id="game-timer" class="font-mono bg-gray-200 px-2 rounded hidden">00:00</span>
       </div>
+      
+      <!-- Barra Progreso -->
       <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
         <div id="game-progress" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
       </div>
+
+      <!-- Pregunta -->
       <div class="question-card text-center">
         <p id="motivational-msg" class="text-sm text-green-600 font-bold mb-2 h-6"></p>
         <h3 id="game-question-text" class="text-xl font-medium mb-6">¿Cargando pregunta...?</h3>
-        <div id="game-answers-grid" class="grid grid-cols-1 gap-3"></div>
+        <div id="game-answers-grid" class="grid grid-cols-1 gap-3">
+          <!-- Botones de respuesta -->
+        </div>
       </div>
     </div>
 
-    <!-- PUNTAJE FINAL -->
+    <!-- PUNTAJE FINAL MATERIA -->
     <div id="level-score" class="screen hidden fade-in text-center">
       <div class="lottie-container lottie-sm mx-auto mb-4" id="confetti-anim"></div>
       <h2 class="text-3xl font-bold text-primary mb-2">¡Felicitaciones!</h2>
       <p class="mb-6 text-gray-600">Has completado <span id="score-subject-name" class="font-bold"></span></p>
+      
       <div class="bg-white rounded-xl shadow-lg p-6 max-w-xs mx-auto mb-6">
         <div class="text-5xl font-bold mb-2" id="score-number">4/5</div>
         <p id="score-feedback" class="text-sm">¡Eres increíble!</p>
       </div>
+
       <button onclick="showScreen('subject-selection')" class="btn w-full max-w-xs mx-auto mb-3">Jugar otra materia</button>
       <button onclick="showScreen('paint-screen')" class="btn w-full max-w-xs mx-auto bg-gray-400">Ir a Dibujar</button>
     </div>
 
-    <!-- ZONA RECREATIVA -->
+    <!-- ZONA RECREATIVA (PAINT) -->
     <div id="paint-screen" class="screen hidden fade-in">
       <h2 class="text-center font-bold text-2xl text-secondary mb-2">Zona Recreativa</h2>
       <p class="text-center text-gray-500 text-sm mb-4">¡Dibuja libremente!</p>
+      
       <div class="canvas-wrapper bg-white shadow-lg rounded-lg mx-auto overflow-hidden relative" style="max-width: 100%; height: 350px; touch-action: none;">
         <canvas id="drawing-board" class="w-full h-full cursor-crosshair"></canvas>
       </div>
+
       <div class="flex justify-center gap-2 mt-4 flex-wrap">
         <button class="color-btn w-8 h-8 rounded-full bg-black border-2 border-white shadow-sm" data-color="#000000"></button>
         <button class="color-btn w-8 h-8 rounded-full bg-red-500 border-2 border-white shadow-sm" data-color="#ef4444"></button>
@@ -267,37 +286,73 @@
         <button class="color-btn w-8 h-8 rounded-full bg-green-500 border-2 border-white shadow-sm" data-color="#22c55e"></button>
         <button class="color-btn w-8 h-8 rounded-full bg-yellow-400 border-2 border-white shadow-sm" data-color="#facc15"></button>
         <button class="color-btn w-8 h-8 rounded-full bg-purple-500 border-2 border-white shadow-sm" data-color="#a855f7"></button>
+        
         <div class="w-px h-8 bg-gray-300 mx-2"></div>
-        <button id="btn-clear-canvas" class="p-2 bg-gray-200 rounded text-gray-700 font-bold text-xs"><i class="fas fa-trash"></i> Borrar</button>
-        <button onclick="showScreen('subject-selection')" class="p-2 bg-red-100 text-red-600 rounded font-bold text-xs">Salir</button>
+        
+        <button id="btn-clear-canvas" class="p-2 bg-gray-200 rounded text-gray-700 font-bold text-xs">
+          <i class="fas fa-trash"></i> Borrar
+        </button>
+        <button onclick="showScreen('subject-selection')" class="p-2 bg-red-100 text-red-600 rounded font-bold text-xs">
+          Salir
+        </button>
       </div>
     </div>
 
-    <!-- TABLA RESULTADOS -->
+    <!-- TABLA RESULTADOS DOCENTE -->
     <div id="results-screen" class="screen hidden fade-in">
       <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">Progreso de Alumnos</h2>
+        <h2 class="text-2xl font-bold">Listado de Alumnos</h2>
         <button id="btn-export-csv" class="btn text-xs bg-green-600 text-white"><i class="fas fa-file-excel mr-1"></i> Exportar</button>
       </div>
+      <p class="text-sm text-gray-500 mb-2">Haz clic en un alumno para ver su historial completo.</p>
+      
       <div class="overflow-x-auto bg-white rounded-lg shadow">
         <table class="w-full text-left border-collapse">
           <thead class="bg-gray-100 text-gray-600 text-sm uppercase">
             <tr>
-              <th class="p-3">Paciente</th>
-              <th class="p-3">Materia</th>
-              <th class="p-3">Ciclo</th>
-              <th class="p-3">Puntaje</th>
-              <th class="p-3">Fecha</th>
+              <th class="p-3 text-left">Nombre</th>
+              <th class="p-3 text-left">DNI</th>
+              <!-- CORRECCIÓN VISUAL: Alineación centrada desde el encabezado -->
+              <th class="p-3 text-center">Total Intentos</th>
+              <th class="p-3 text-center">Acción</th>
             </tr>
           </thead>
-          <tbody id="results-table-body" class="text-sm"></tbody>
+          <tbody id="results-table-body" class="text-sm">
+            <!-- JS lo llena con pacientes únicos -->
+          </tbody>
         </table>
       </div>
-      <div id="no-data-msg" class="text-center p-8 text-gray-500 hidden">No hay registros aún.</div>
+      <div id="no-data-msg" class="text-center p-8 text-gray-500 hidden">No hay alumnos registrados.</div>
       <button class="btn-back mt-4" onclick="showScreen('docente-panel')">Volver</button>
     </div>
 
-  </div>
+    <!-- MODAL HISTORIAL ALUMNO (NUEVO) -->
+    <div id="modal-history" class="modal hidden">
+      <div class="modal-content relative max-w-2xl w-full">
+        <button class="absolute top-2 right-2 text-gray-500 text-xl" onclick="toggleModal('modal-history', false)">&times;</button>
+        <h2 class="text-xl font-bold mb-1">Historial de: <span id="history-patient-name" class="text-primary"></span></h2>
+        <p class="text-sm text-gray-500 mb-4">DNI: <span id="history-patient-dni"></span></p>
+        
+        <div class="overflow-y-auto max-h-60 bg-gray-50 rounded border">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-gray-200 font-bold text-gray-700">
+              <tr>
+                <th class="p-2 text-left">Fecha</th>
+                <th class="p-2 text-left">Materia</th>
+                <th class="p-2 text-left">Ciclo</th>
+                <th class="p-2 text-center">Puntaje</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body">
+              <!-- Historial detallado -->
+            </tbody>
+          </table>
+        </div>
+        <button class="btn w-full mt-4" onclick="toggleModal('modal-history', false)">Cerrar</button>
+      </div>
+    </div>
+
+  </div> <!-- End App -->
 
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"></script>

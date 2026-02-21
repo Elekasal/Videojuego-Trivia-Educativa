@@ -1,13 +1,9 @@
 /* ==========================================================
    services/supabase.js
-   ADAPTADOR V5: APP (Inglés/V4) <---> BASE DE DATOS (Español/Universitaria)
-   
-   Este archivo traduce las peticiones de la App (que espera inglés)
-   a la estructura de la Base de Datos universitaria (que está en español
-   y usa claves primarias únicas como id_materia, id_pregunta, etc).
+   ADAPTADOR V5.1: GESTIÓN DE PACIENTES ÚNICOS (DNI) Y TRADUCCIÓN DB
    ========================================================== */
 (() => {
-  // CONFIGURACIÓN
+  // CONFIGURACIÓN (TUS CREDENCIALES)
   const SUPABASE_URL = 'https://gddpceumixxwrbejgotd.supabase.co'; 
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkZHBjZXVtaXh4d3JiZWpnb3RkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE0MzI1MzEsImV4cCI6MjA3NzAwODUzMX0._dy0jD4uVE0fMCkfeQfrGoPSPPIh3PbnoDoQPAoGbQA';
   
@@ -27,15 +23,15 @@
     return data?.session ?? null;
   }
 
-  // --- AUTH (Supabase Auth usa sus propias tablas internas, no se tocan) ---
+  // --- AUTENTICACIÓN (DOCENTE) ---
   async function login(email, password) {
     if (!SB) return _fail({ message: 'No DB' });
     const { data, error } = await SB.auth.signInWithPassword({ email, password });
     return error ? _fail(error) : _ok(data.user);
   }
 
-  // Función de re-autenticación para zonas seguras
   async function reauthenticate(email, password) {
+    // Reutilizamos login para confirmar contraseña
     return await login(email, password);
   }
 
@@ -50,10 +46,9 @@
     await SB.auth.signOut();
   }
 
-  // --- MATERIAS (Tabla DB: 'materias') ---
+  // --- MATERIAS (Tabla: 'materias') ---
   async function getSubjects() {
-    // TRADUCCIÓN: DB(español) -> APP(inglés)
-    // id_materia se convierte en 'id' para que el JS lo entienda
+    // TRADUCCIÓN: id_materia -> id, nombre -> name
     const { data, error } = await SB.from('materias')
       .select('id:id_materia, name:nombre, is_public:es_publica')
       .order('fecha_creacion');
@@ -65,30 +60,28 @@
     const session = await getSession();
     if (!session) return _fail({ message: 'Debes iniciar sesión' });
     
-    // Insertamos en español (nombre)
     const { data, error } = await SB.from('materias')
       .insert({ 
         nombre: name, 
         creado_por: session.user.id 
       })
-      .select('id:id_materia, name:nombre, is_public:es_publica') // Retornamos traducido
+      .select('id:id_materia, name:nombre, is_public:es_publica')
       .single();
       
     return error ? _fail(error) : _ok(data);
   }
 
   async function deleteSubject(id) {
-    // Usamos la PK correcta: id_materia
     const { error } = await SB.from('materias').delete().eq('id_materia', id);
     return error ? _fail(error) : _ok();
   }
 
-  // --- PREGUNTAS (Tabla DB: 'preguntas') ---
+  // --- PREGUNTAS (Tabla: 'preguntas') ---
   async function createQuestion(subjectId, cycle, text, answersArray) {
     const session = await getSession();
     if (!session) return _fail({ message: 'Sin sesión' });
     
-    // 1. Insertar Pregunta (Traduciendo: subjectId -> id_materia)
+    // 1. Insertar Pregunta
     const { data: qData, error: qError } = await SB.from('preguntas')
       .insert({
         id_materia: subjectId,
@@ -101,8 +94,7 @@
 
     if (qError) return _fail(qError);
     
-    // 2. Insertar Respuestas (Tabla DB: 'respuestas')
-    // Traduciendo: question_id -> id_pregunta
+    // 2. Insertar Respuestas
     const answersToInsert = answersArray.map(a => ({
       id_pregunta: qData.id,
       texto_respuesta: a.text,
@@ -113,9 +105,9 @@
     return aError ? _fail(aError) : _ok(qData);
   }
 
-  // Obtener preguntas para el GESTOR (Edición)
+  // --- GESTIÓN DE PREGUNTAS (CRUD COMPLETO) ---
   async function getAllQuestionsForSubject(subjectId) {
-    // Traemos los datos crudos en español
+    // Obtener datos crudos en español
     const { data, error } = await SB.from('preguntas')
       .select(`
         id_pregunta, texto_pregunta, ciclo,
@@ -126,7 +118,7 @@
 
     if (error) return _fail(error);
 
-    // MAPEO MANUAL: Convertimos la estructura español -> estructura inglés de la App
+    // Mapear a estructura en Inglés para la App
     const mapped = data.map(q => ({
       id: q.id_pregunta,
       question_text: q.texto_pregunta,
@@ -142,7 +134,7 @@
   }
 
   async function updateQuestion(qId, text, cycle, answersArray) {
-    // 1. Actualizar pregunta (usando id_pregunta y texto_pregunta)
+    // 1. Actualizar texto de pregunta
     const { error: qError } = await SB.from('preguntas')
       .update({ texto_pregunta: text, ciclo: cycle })
       .eq('id_pregunta', qId);
@@ -163,12 +155,11 @@
   }
 
   async function deleteQuestion(id) {
-    // Borrar usando PK única id_pregunta
     const { error } = await SB.from('preguntas').delete().eq('id_pregunta', id);
     return error ? _fail(error) : _ok();
   }
 
-  // --- JUEGO (Lectura para Trivia) ---
+  // --- JUEGO (LECTURA DE PREGUNTAS) ---
   async function getQuestionsForGame(subjectId, cycle) {
     const { data, error } = await SB.from('preguntas')
       .select(`
@@ -180,12 +171,12 @@
 
     if (error) return _fail(error);
     
-    // Filtrar válidas y traducir
+    // Filtrar preguntas válidas (mínimo 2 respuestas) y traducir
     const validQuestions = data
       .filter(q => q.respuestas && q.respuestas.length >= 2)
       .map(q => ({
-        id: q.id_pregunta, // La App espera 'id'
-        question_text: q.texto_pregunta, // La App espera 'question_text'
+        id: q.id_pregunta, 
+        question_text: q.texto_pregunta, 
         cycle: q.ciclo,
         answers: q.respuestas.map(r => ({
           id: r.id_respuesta,
@@ -197,54 +188,101 @@
     return _ok(validQuestions);
   }
 
-  // --- RESULTADOS (Tabla DB: 'intentos') ---
+  // --- PACIENTES (NUEVO SISTEMA ÚNICO POR DNI) ---
+  async function registerOrGetPatient(name, dni) {
+    const session = await getSession();
+    if (!session) return _fail({message: "No hay sesión docente activa"});
+    
+    // 1. Buscar si ya existe este alumno para este docente (por DNI)
+    const { data, error } = await SB.from('pacientes')
+      .select('id_paciente, nombre, dni')
+      .eq('dni', dni)
+      .eq('creado_por', session.user.id)
+      .maybeSingle(); // No tira error si está vacío, devuelve null
+
+    if (data) {
+        // Si existe, actualizamos el nombre por si hubo corrección
+        await SB.from('pacientes').update({ nombre: name }).eq('id_paciente', data.id_paciente);
+        return _ok(data); // Devolvemos el paciente existente
+    }
+
+    // 2. Si no existe, lo creamos
+    const { data: newData, error: newError } = await SB.from('pacientes')
+      .insert({ 
+        nombre: name, 
+        dni: dni, 
+        creado_por: session.user.id 
+      })
+      .select('id_paciente, nombre, dni')
+      .single();
+      
+    return newError ? _fail(newError) : _ok(newData);
+  }
+
+  // --- INTENTOS Y RESULTADOS (HISTORIAL) ---
   async function saveAttempt(d) {
-    // Traducir objeto App (Inglés) -> Columnas DB (Español)
+    // Guardamos el intento vinculándolo al ID único del paciente
     const payload = {
-      nombre_paciente: d.patient_name,
+      id_paciente: d.patientId, // Clave foránea real
       nombre_materia: d.subject_name,
       ciclo: d.cycle,
       respuestas_correctas: d.correct_count,
       respuestas_incorrectas: d.incorrect_count,
-      puntaje_total: d.score_total,
-      creado_por: d.created_by
+      puntaje_total: d.score_total
     };
 
     const { error } = await SB.from('intentos').insert(payload);
     return error ? _fail(error) : _ok();
   }
 
-  async function getAttempts() {
-    const { data, error } = await SB.from('intentos')
+  // Obtener lista de pacientes (Agrupada)
+  async function getPatientsList() {
+    // Obtenemos pacientes y contamos sus intentos
+    // Requiere que la relación FK esté bien definida en Supabase
+    const { data, error } = await SB.from('pacientes')
       .select(`
-        id_intento, nombre_paciente, nombre_materia, ciclo, 
-        respuestas_correctas, respuestas_incorrectas, puntaje_total, fecha_creacion
+        id_paciente, nombre, dni, 
+        intentos (count)
       `)
-      .order('fecha_creacion', { ascending: false });
-
+      .order('nombre');
+    
     if (error) return _fail(error);
-
-    // Traducir DB (Español) -> App (Inglés) para la tabla de resultados
-    const mapped = data.map(r => ({
-      id: r.id_intento,
-      patient_name: r.nombre_paciente,
-      subject_name: r.nombre_materia,
-      cycle: r.ciclo,
-      correct_count: r.respuestas_correctas,
-      incorrect_count: r.respuestas_incorrectas,
-      score_total: r.puntaje_total,
-      created_at: r.fecha_creacion
+    
+    // Mapeo simple para la tabla
+    const mapped = data.map(p => ({
+        id: p.id_paciente,
+        name: p.nombre,
+        dni: p.dni,
+        attempts_count: p.intentos[0]?.count || 0
     }));
-
     return _ok(mapped);
   }
 
-  // Exponer API (Mantiene los mismos nombres de funciones que usa logica.js)
+  // Obtener historial detallado de UN paciente
+  async function getPatientHistory(patientId) {
+    const { data, error } = await SB.from('intentos')
+      .select('*')
+      .eq('id_paciente', patientId)
+      .order('fecha_creacion', { ascending: false });
+      
+    if(error) return _fail(error);
+    
+    // Mapeo a inglés para la vista
+    return _ok(data.map(i => ({
+        date: i.fecha_creacion,
+        subject: i.nombre_materia,
+        cycle: i.ciclo,
+        score: i.puntaje_total
+    })));
+  }
+
+  // EXPOSICIÓN DE API PÚBLICA
   window.DB = {
     login, register, logout, getSession, reauthenticate,
     getSubjects, createSubject, deleteSubject,
     createQuestion, getAllQuestionsForSubject, updateQuestion, deleteQuestion,
     getQuestionsForGame,
-    saveAttempt, getAttempts
+    // Nuevas funciones V5.1
+    registerOrGetPatient, saveAttempt, getPatientsList, getPatientHistory
   };
 })();
